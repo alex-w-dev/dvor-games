@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Afterlight Radio</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://lightborn.ru/sdk.js"></script>
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="fx" aria-hidden="true"></canvas>
+      <div id="vignette"></div>
+      <header id="top">
+        <div>
+          <p class="eyebrow">HTML5 · shared asset dataset</p>
+          <h1>Afterlight Radio</h1>
+        </div>
+        <p id="player-label">гость</p>
+      </header>
+      <main id="panel">
+        <p id="hint">Крути частоту. Станции — волны музыки из датасета. Между ними — помехи и чужие лица.</p>
+        <label class="dial-label" for="dial">Частота</label>
+        <input id="dial" type="range" min="0" max="1000" value="120" />
+        <div id="readout">
+          <span id="band">—</span>
+          <span id="track">настрой приёмник</span>
+        </div>
+        <div id="actions">
+          <button id="lock" type="button">Поймать волну</button>
+          <button id="haunt" type="button">Проявить лицо</button>
+        </div>
+        <p id="lore"></p>
+      </main>
+      <aside id="faces" aria-label="Проявленные лица"></aside>
+    </div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

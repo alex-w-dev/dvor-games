@@ -1,9 +1,39 @@
 /**
- * Copy game static files into dist/ (index.html + src/, assets/ if present).
+ * Copy game static files into dist/.
+ * - index.html (required)
+ * - root files: .js .css .json .svg .png .jpg .jpeg .webp .gif .ogg .mp3 .wav .woff .woff2
+ * - dirs: src/, assets/, public/ if present
  * Run from the game package root (cwd).
  */
-import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import path from "node:path";
+
+const ROOT_SKIP = new Set([
+  "package.json",
+  "dist",
+  "tmp",
+  "node_modules",
+  ".env",
+  ".env.local",
+]);
+
+const ROOT_EXT = new Set([
+  ".html",
+  ".js",
+  ".css",
+  ".json",
+  ".svg",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+  ".ogg",
+  ".mp3",
+  ".wav",
+  ".woff",
+  ".woff2",
+]);
 
 const root = process.cwd();
 const dist = path.join(root, "dist");
@@ -16,7 +46,16 @@ if (!existsSync(indexHtml)) {
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
-cpSync(indexHtml, path.join(dist, "index.html"));
+
+for (const name of readdirSync(root)) {
+  if (ROOT_SKIP.has(name) || name.startsWith(".")) continue;
+  const from = path.join(root, name);
+  const st = statSync(from);
+  if (!st.isFile()) continue;
+  const ext = path.extname(name).toLowerCase();
+  if (!ROOT_EXT.has(ext)) continue;
+  cpSync(from, path.join(dist, name));
+}
 
 for (const dir of ["src", "assets", "public"]) {
   const from = path.join(root, dir);

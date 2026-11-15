@@ -1,9 +1,9 @@
 {
-  "name": "@games/hello",
+  "name": "@games/afterlight-radio",
   "private": true,
   "version": "0.0.0",
   "lightborn": {
-    "slug": "hello"
+    "slug": "afterlight-radio"
   },
   "scripts": {
     "build": "node ../../packages/deploy/bin/copy-static.mjs",

@@ -1,0 +1,202 @@
+:root {
+  color-scheme: dark;
+  --ink: #f2e6c9;
+  --muted: #9a8f78;
+  --glow: #ffb454;
+  --panel: rgba(10, 8, 6, 0.72);
+  --line: rgba(242, 230, 201, 0.18);
+  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #070605;
+  color: var(--ink);
+  overflow: hidden;
+}
+
+#stage {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255, 180, 84, 0.18), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(80, 120, 180, 0.12), transparent 45%),
+    #070605;
+  background-size: cover;
+  background-position: center;
+  transition: background-image 0.8s ease;
+}
+
+#fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+#vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.72) 100%);
+}
+
+#top,
+#panel,
+#faces {
+  position: relative;
+  z-index: 2;
+}
+
+#top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 0.5rem;
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+#player-label {
+  margin: 0;
+  align-self: start;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+#panel {
+  width: min(560px, calc(100% - 2rem));
+  margin: 1rem 0 0 1.5rem;
+  padding: 1.1rem 1.2rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+#hint,
+#lore {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 0.95rem;
+}
+
+.dial-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#dial {
+  width: 100%;
+  accent-color: var(--glow);
+}
+
+#readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.9rem 0 1rem;
+  min-height: 3.2rem;
+}
+
+#band {
+  color: var(--glow);
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+#track {
+  font-size: 1.05rem;
+}
+
+#actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+button {
+  appearance: none;
+  border: 1px solid rgba(255, 180, 84, 0.45);
+  background: linear-gradient(180deg, rgba(255, 180, 84, 0.22), rgba(255, 180, 84, 0.06));
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--glow);
+}
+
+#faces {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 0.55rem;
+  max-width: min(70vw, 420px);
+  overflow: hidden;
+}
+
+#faces img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(242, 230, 201, 0.28);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  opacity: 0.92;
+  transform: rotate(var(--tilt, 0deg));
+}
+
+@media (max-width: 720px) {
+  #panel {
+    margin: 0.75rem auto 0;
+  }
+
+  #faces {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    margin: 1rem 1rem 1.25rem;
+    max-width: none;
+  }
+}
