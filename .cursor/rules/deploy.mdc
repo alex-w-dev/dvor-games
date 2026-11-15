@@ -1,0 +1,39 @@
+---
+description: Деплой мини-игр на lightborn.ru (env, API, zip)
+alwaysApply: true
+---
+
+# Деплой мини-игр на lightborn.ru
+
+## Цикл
+
+1. В кабинете https://lightborn.ru/cabinet/games создай игру с нужным **slug** (CLI карточку не создаёт).
+2. Локально: `pnpm run deploy <folder>` из корня фермы (например `pnpm run deploy hello`).
+3. CLI: `build` → zip `dist/` → `POST …/developer/games/{slug}/deploy` с `X-Api-Key`.
+4. Версия появляется как draft (или сразу на модерацию, если `LIGHTBORN_SUBMIT=true`).
+5. Превью: `/draft/<id>/<version>`. После модерации: `/play/<slug>`.
+
+## Env (корневой `.env`, не коммитить)
+
+| Переменная | Назначение |
+|---|---|
+| `LIGHTBORN_API_KEY` | Обязательно. Ключ: кабинет → Профиль → API-ключ |
+| `LIGHTBORN_API_URL` | По умолчанию `https://lightborn.ru/main-api` |
+| `LIGHTBORN_SUBMIT` | `true`/`false`, по умолчанию `true` (сразу на модерацию) |
+| `LIGHTBORN_VERSION` | Версия zip; иначе timestamp `YYYYMMDDhhmmss` |
+| `LIGHTBORN_SKIP_BUILD` | `true` — не вызывать `pnpm run build` |
+
+Образец: `.env.example`.
+
+## Требования к zip
+
+- В корне архива есть `index.html`.
+- Лимит 100 MB.
+- SDK платформы: в HTML абсолютный URL `<script src="https://lightborn.ru/sdk.js"></script>` (относительный путь с S3 не сработает).
+- Игра должна быть создана в кабинете с тем же `lightborn.slug`, что в `package.json`.
+
+## Команды
+
+- Из корня: `pnpm run deploy <name>` (`name` = папка в `games/`).
+- Из папки игры: `pnpm run deploy` (вызывает `lightborn-deploy`).
+- Не использовать `pnpm deploy` без `run` — это встроенная команда pnpm, не наш скрипт.

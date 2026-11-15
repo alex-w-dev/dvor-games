@@ -1,0 +1,11 @@
+{
+  "name": "lightborn-games",
+  "private": true,
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "deploy": "node packages/deploy/bin/deploy-game.mjs"
+  },
+  "devDependencies": {
+    "@lightborn-games/deploy": "workspace:*"
+  }
+}

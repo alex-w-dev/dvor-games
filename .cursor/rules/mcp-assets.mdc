@@ -1,0 +1,15 @@
+---
+description: MCP dataset-assets для ассетов игр
+alwaysApply: true
+---
+
+# MCP ассетов
+
+- Сервер Cursor: **dataset-assets** (см. `.cursor/mcp.json`).
+- Код MCP живёт в платформенном монорепо: `D:\code\l-fight-mobile\packages\dataset-mcp` — **не копировать** в ферму.
+- Инструменты:
+  - `search_assets` — семантический поиск (images, icons, backgrounds, sfx, music) по описанию; можно фильтр `types`.
+  - `get_asset` — документ ассета по type + id.
+  - `reindex_assets` — пересборка эмбеддингов (редко).
+- Найденный ассет **скопируй** в игру (`games/<name>/assets/…`) и ссылайся локальным путём в билде. Не полагайся на URL MCP в рантайме игры.
+- Если MCP недоступен — проверь, что открыт этот workspace и путь к `dataset-mcp` в `.cursor/mcp.json` верный; платформенный репо должен лежать рядом.

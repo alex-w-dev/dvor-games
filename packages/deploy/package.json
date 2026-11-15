@@ -1,0 +1,12 @@
+{
+  "name": "@lightborn-games/deploy",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "lightborn-deploy": "./bin/lightborn-deploy.mjs"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.18"
+  }
+}

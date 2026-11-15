@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hello Lightborn</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: system-ui, sans-serif;
+        background: #0f1419;
+        color: #e8eef4;
+      }
+      #app {
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 1.5rem;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.75rem;
+        font-weight: 700;
+      }
+      p {
+        margin: 0;
+        opacity: 0.75;
+      }
+      #player {
+        margin-top: 1rem;
+        font-size: 0.875rem;
+        opacity: 0.6;
+      }
+    </style>
+    <script src="https://lightborn.ru/sdk.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div>
+        <h1>Hello Lightborn</h1>
+        <p>Мини-игра из фермы lightborn-games</p>
+        <p id="player"></p>
+      </div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

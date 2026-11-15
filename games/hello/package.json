@@ -1,0 +1,15 @@
+{
+  "name": "@games/hello",
+  "private": true,
+  "version": "0.0.0",
+  "lightborn": {
+    "slug": "hello"
+  },
+  "scripts": {
+    "build": "node ../../packages/deploy/bin/copy-static.mjs",
+    "deploy": "lightborn-deploy"
+  },
+  "devDependencies": {
+    "@lightborn-games/deploy": "workspace:*"
+  }
+}

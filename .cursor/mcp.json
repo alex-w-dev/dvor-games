@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "dataset-assets": {
+      "command": "C:\\Programs\\nodejs\\node.exe",
+      "args": [
+        "D:\\code\\l-fight-mobile\\packages\\dataset-mcp\\src\\index.mjs"
+      ],
+      "cwd": "D:\\code\\l-fight-mobile\\packages\\dataset-mcp"
+    }
+  }
+}
