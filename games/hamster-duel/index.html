@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Дуэль хомячков</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./sdk.js"></script>
+  </head>
+  <body>
+    <div id="portrait-gate" hidden>
+      <p>Дуэль хомячков — только для широкого десктопного окна.</p>
+    </div>
+
+    <div id="app">
+      <section id="lobby" class="screen">
+        <header class="lobby-head">
+          <h1>Дуэль хомячков</h1>
+          <p id="lobby-player">загрузка…</p>
+        </header>
+
+        <div class="lobby-body">
+          <div class="lobby-rankings">
+            <div class="lobby-card">
+              <h2>По очкам</h2>
+              <ol id="board-score" class="champions"></ol>
+              <p id="board-score-empty" class="muted">Пока пусто.</p>
+            </div>
+            <div class="lobby-card">
+              <h2>По победам</h2>
+              <ol id="board-wins" class="champions"></ol>
+              <p id="board-wins-empty" class="muted">Пока пусто.</p>
+            </div>
+            <div class="lobby-card">
+              <h2>По играм</h2>
+              <ol id="board-games" class="champions"></ol>
+              <p id="board-games-empty" class="muted">Пока пусто.</p>
+            </div>
+          </div>
+
+          <div class="lobby-card lobby-card--action">
+            <p id="my-stats" class="my-stats muted">Ваша статистика загрузится после входа.</p>
+            <p class="lobby-rules">
+              Двое бьют по общей сетке 3×3. Кто первым кликнул по хомяку —
+              забирает очко. Матч 30 секунд, перед боем — отсчёт 5 секунд.
+              Очки за бой (даже при поражении) копятся в рейтинге.
+            </p>
+            <button type="button" id="join" disabled>В бой</button>
+            <p id="lobby-status" class="muted"></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="match" class="screen" hidden>
+        <header id="top">
+          <h1>Дуэль хомячков</h1>
+          <p id="status">ожидание…</p>
+          <p id="timer" hidden></p>
+          <button type="button" id="cancel-wait" class="btn-ghost" hidden>
+            В лобби
+          </button>
+        </header>
+
+        <main id="arena">
+          <aside class="side" id="side-left" data-side="left">
+            <div class="portrait" aria-hidden="true"></div>
+            <p class="name">Игрок 1</p>
+            <p class="score">0</p>
+          </aside>
+
+          <section id="board" aria-label="Поле 3 на 3">
+            <button type="button" class="cell" data-cell="0" aria-label="Ячейка 1"></button>
+            <button type="button" class="cell" data-cell="1" aria-label="Ячейка 2"></button>
+            <button type="button" class="cell" data-cell="2" aria-label="Ячейка 3"></button>
+            <button type="button" class="cell" data-cell="3" aria-label="Ячейка 4"></button>
+            <button type="button" class="cell" data-cell="4" aria-label="Ячейка 5"></button>
+            <button type="button" class="cell" data-cell="5" aria-label="Ячейка 6"></button>
+            <button type="button" class="cell" data-cell="6" aria-label="Ячейка 7"></button>
+            <button type="button" class="cell" data-cell="7" aria-label="Ячейка 8"></button>
+            <button type="button" class="cell" data-cell="8" aria-label="Ячейка 9"></button>
+          </section>
+
+          <aside class="side" id="side-right" data-side="right">
+            <div class="portrait" aria-hidden="true"></div>
+            <p class="name">Игрок 2</p>
+            <p class="score">0</p>
+          </aside>
+        </main>
+      </section>
+
+      <div id="overlay" hidden>
+        <p id="overlay-title"></p>
+        <p id="overlay-sub"></p>
+        <div class="overlay-actions">
+          <button type="button" id="again">Ещё раз</button>
+          <button type="button" id="to-lobby" class="btn-ghost">В лобби</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="cursor-hammer" aria-hidden="true" hidden></div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

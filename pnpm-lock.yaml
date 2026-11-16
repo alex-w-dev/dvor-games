@@ -18,6 +18,12 @@ importers:
         specifier: workspace:*
         version: link:../../packages/deploy
 
+  games/hamster-duel:
+    devDependencies:
+      '@lightborn-games/deploy':
+        specifier: workspace:*
+        version: link:../../packages/deploy
+
   games/roguelike:
     dependencies:
       react:

@@ -1,0 +1,8 @@
+{
+  "modes": ["duel"],
+  "minPlayers": 2,
+  "maxPlayers": 2,
+  "tickRate": 20,
+  "hasLobby": false,
+  "capabilities": ["match"]
+}

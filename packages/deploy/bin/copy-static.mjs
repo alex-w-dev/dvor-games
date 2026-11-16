@@ -57,7 +57,7 @@ for (const name of readdirSync(root)) {
   cpSync(from, path.join(dist, name));
 }
 
-for (const dir of ["src", "assets", "public"]) {
+for (const dir of ["src", "assets", "public", "server"]) {
   const from = path.join(root, dir);
   if (existsSync(from)) {
     cpSync(from, path.join(dist, dir), { recursive: true });

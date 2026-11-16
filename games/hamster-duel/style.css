@@ -1,0 +1,469 @@
+:root {
+  --bg0: #1a120c;
+  --bg1: #3d2918;
+  --hole: #2a1c12;
+  --accent: #e85d04;
+  --ink: #f6e7d0;
+  --muted: #b89a78;
+  --left: #3d7ea6;
+  --right: #c45c26;
+  --panel: rgba(20, 12, 8, 0.72);
+  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse at 50% 20%, #5a3a22 0%, transparent 55%),
+    linear-gradient(180deg, var(--bg1), var(--bg0));
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* Во время боя системный курсор скрыт — только молоток. На оверлее результата — снова обычный. */
+body.in-match {
+  cursor: none;
+}
+
+body.in-match *:not(#overlay):not(#overlay *) {
+  cursor: none !important;
+}
+
+body.in-match #overlay:not([hidden]),
+body.in-match #overlay:not([hidden]) * {
+  cursor: auto;
+}
+
+body.in-match #overlay:not([hidden]) #again,
+body.in-match #overlay:not([hidden]) #to-lobby {
+  cursor: pointer;
+}
+
+#portrait-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: var(--bg0);
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+#portrait-gate[hidden] {
+  display: none;
+}
+
+#app {
+  min-height: 100vh;
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+.screen[hidden] {
+  display: none !important;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0;
+}
+
+/* —— Lobby —— */
+#lobby {
+  max-width: 920px;
+  margin: 0 auto;
+  min-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.lobby-head {
+  text-align: center;
+}
+
+.lobby-head h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 0 #0006;
+}
+
+#lobby-player {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+.lobby-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+  width: min(1100px, 100%);
+}
+
+.lobby-rankings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.my-stats {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+}
+
+.lobby-card {
+  background: var(--panel);
+  border: 1px solid #f6e7d022;
+  border-radius: 1rem;
+  padding: 1.25rem 1.4rem;
+}
+
+.lobby-card h2 {
+  margin: 0 0 0.85rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.champions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.champions li {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.6rem;
+  background: #0003;
+}
+
+.champions .rank {
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.champions .wins {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+#champions-empty[hidden],
+.champions:not(:empty) + #champions-empty {
+  display: none;
+}
+
+.lobby-card--action {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.lobby-rules {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: 28ch;
+}
+
+#join,
+#again,
+#to-lobby,
+#cancel-wait {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 2rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a120c;
+  background: linear-gradient(180deg, #ffb703, var(--accent));
+  box-shadow: 0 4px 0 #9a3b00;
+  cursor: pointer;
+}
+
+#join:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: default;
+}
+
+.btn-ghost,
+#to-lobby,
+#cancel-wait {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid #f6e7d055;
+  box-shadow: none;
+}
+
+#cancel-wait {
+  margin-top: 0.75rem;
+  padding: 0.55rem 1.4rem;
+  font-size: 1rem;
+}
+
+#cancel-wait[hidden] {
+  display: none;
+}
+
+body.in-match #cancel-wait:not([hidden]) {
+  cursor: pointer !important;
+}
+
+#lobby-status {
+  min-height: 1.25rem;
+  font-size: 0.95rem;
+}
+
+/* —— Match —— */
+#match {
+  min-height: calc(100vh - 2rem);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.75rem;
+}
+
+#top {
+  text-align: center;
+}
+
+#top h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 0 #0006;
+}
+
+#status,
+#timer {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+#timer {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+#arena {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(360px, 520px) minmax(140px, 1fr);
+  align-items: center;
+  gap: 1.25rem;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem;
+  border-radius: 1rem;
+  background: var(--panel);
+  border: 2px solid transparent;
+  min-height: 220px;
+  justify-content: center;
+}
+
+.side.is-me {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px #e85d0444;
+}
+
+.side .portrait {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #fff6, transparent 40%),
+    linear-gradient(145deg, var(--left), #1a3040);
+  border: 3px solid #f6e7d088;
+}
+
+#side-right .portrait {
+  background:
+    radial-gradient(circle at 35% 30%, #fff6, transparent 40%),
+    linear-gradient(145deg, var(--right), #4a2010);
+}
+
+.side .name {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.side .score {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, #8b6914 0%, #6b4e10 100%);
+  box-shadow:
+    inset 0 0 0 4px #5a4010,
+    0 12px 28px #0008;
+  aspect-ratio: 1;
+}
+
+.cell {
+  position: relative;
+  appearance: none;
+  border: none;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 35%, #4a3220 0%, var(--hole) 55%, #120c08 100%);
+  box-shadow:
+    inset 0 8px 16px #000a,
+    0 2px 0 #c4a57455;
+  cursor: none;
+  overflow: hidden;
+}
+
+.cell::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 8%;
+  height: 28%;
+  border-radius: 50%;
+  background: #1a1008;
+  opacity: 0.85;
+}
+
+.cell .mole {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  width: 72%;
+  height: 72%;
+  transform: translateX(-50%) translateY(110%);
+  background: url("./assets/hamster.svg") center / contain no-repeat;
+  transition: transform 0.12s ease-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cell.has-mole .mole {
+  transform: translateX(-50%) translateY(0);
+}
+
+.cell.whack .mole {
+  transform: translateX(-50%) translateY(110%) scale(0.7);
+  filter: brightness(0.6);
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-content: center;
+  gap: 0.75rem;
+  background: #120c08cc;
+  text-align: center;
+  padding: 2rem;
+}
+
+#overlay[hidden] {
+  display: none;
+}
+
+#overlay-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+#overlay-sub {
+  margin: 0;
+  color: var(--muted);
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+#cursor-hammer {
+  position: fixed;
+  width: 48px;
+  height: 48px;
+  background: url("./assets/hammer.svg") center / contain no-repeat;
+  pointer-events: none;
+  z-index: 100;
+  transform: translate(-20%, -20%) rotate(-25deg);
+  transition: transform 0.06s ease-out;
+}
+
+#cursor-hammer[hidden] {
+  display: none;
+}
+
+#cursor-hammer.smash {
+  transform: translate(-20%, -20%) rotate(15deg) scale(0.92);
+}
+
+@media (max-width: 900px), (orientation: portrait) {
+  body {
+    cursor: auto;
+  }
+  #cursor-hammer {
+    display: none;
+  }
+  #app {
+    display: none;
+  }
+  #portrait-gate {
+    display: grid;
+  }
+}
+
+@media (max-width: 720px) {
+  .lobby-body {
+    grid-template-columns: 1fr;
+  }
+  .lobby-rankings {
+    grid-template-columns: 1fr;
+  }
+}
