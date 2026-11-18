@@ -3,6 +3,6 @@
   "minPlayers": 2,
   "maxPlayers": 2,
   "tickRate": 20,
-  "hasLobby": false,
-  "capabilities": ["match"]
+  "hasLobby": true,
+  "capabilities": ["lobby", "match"]
 }

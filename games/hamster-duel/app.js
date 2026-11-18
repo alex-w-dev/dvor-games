@@ -35,6 +35,7 @@
   let lastState = null;
   let inMatch = false;
   let handlersBound = false;
+  let lobbyConnected = false;
   let boardsCache = { topScore: [], topWins: [], topGames: [] };
   let playerSave = {};
   let sideColor = "red";
@@ -56,7 +57,53 @@
         sdk.match.leave();
       } catch (_) {}
     }
+    lobbyConnected = false;
+    inMatch = false;
     showLobby();
+    ensureLobby().catch(function () {});
+  }
+
+  async function ensureLobby() {
+    if (!sdk || !sdk.lobby || !sdk.lobby.join) {
+      throw new Error("lobby SDK unavailable");
+    }
+    if (lobbyConnected) return;
+    await sdk.lobby.join();
+    lobbyConnected = true;
+  }
+
+  function lobbySetColor(color, unlocked) {
+    return new Promise(function (resolve, reject) {
+      if (!sdk || !sdk.lobby || !sdk.lobby.send || !sdk.lobby.onMessage) {
+        reject(new Error("lobby.send unavailable"));
+        return;
+      }
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) return;
+        done = true;
+        off();
+        reject(new Error("timeout saving color"));
+      }, 10000);
+      var off = sdk.lobby.onMessage(function (type, payload) {
+        if (type !== "color_ok" && type !== "color_err") return;
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        off();
+        if (type === "color_ok") resolve(payload || {});
+        else
+          reject(
+            new Error(
+              (payload && payload.message) || "не удалось сохранить цвет",
+            ),
+          );
+      });
+      sdk.lobby.send("set_color", {
+        sideColor: color,
+        unlockedColors: unlocked,
+      });
+    });
   }
 
   function showLobby() {
@@ -192,9 +239,19 @@
       unlockedColors: unlockedColors,
     });
     renderColorPicker();
-    if (sdk && sdk.player && sdk.player.setData) {
-      await sdk.player.setData(playerSave);
+    await ensureLobby();
+    const confirmed = await lobbySetColor(sideColor, unlockedColors);
+    if (confirmed && typeof confirmed.sideColor === "string") {
+      sideColor = confirmed.sideColor;
     }
+    if (confirmed && Array.isArray(confirmed.unlockedColors)) {
+      unlockedColors = confirmed.unlockedColors.slice();
+    }
+    playerSave = Object.assign({}, playerSave, {
+      sideColor: sideColor,
+      unlockedColors: unlockedColors,
+    });
+    renderColorPicker();
   }
 
   async function buyBlackColor() {
@@ -481,6 +538,7 @@
     joinBtn.disabled = true;
     setLobbyStatus("Подключение…");
     overlay.hidden = true;
+    lobbyConnected = false;
     try {
       bindMatchHandlers();
       const info = await sdk.match.join();
@@ -497,6 +555,7 @@
       showLobby();
       joinBtn.disabled = false;
       setLobbyStatus("Не удалось войти: " + (e && e.message ? e.message : e));
+      ensureLobby().catch(function () {});
     }
   }
 
@@ -543,6 +602,16 @@
         : "Гость — войдите в аккаунт";
       joinBtn.disabled = !meId;
       if (!meId) setLobbyStatus("Для матча нужен вход на платформе.");
+      if (meId) {
+        try {
+          await ensureLobby();
+        } catch (lobbyErr) {
+          setLobbyStatus(
+            "Лобби недоступно: " +
+              (lobbyErr && lobbyErr.message ? lobbyErr.message : lobbyErr),
+          );
+        }
+      }
       await refreshLobbyStats();
     } catch (e) {
       lobbyPlayer.textContent =
