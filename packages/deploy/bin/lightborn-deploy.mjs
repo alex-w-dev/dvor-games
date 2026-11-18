@@ -7,7 +7,7 @@
  *   LIGHTBORN_API_KEY   required
  *   LIGHTBORN_API_URL   default https://lightborn.ru/main-api
  *   LIGHTBORN_SUBMIT    default true
- *   LIGHTBORN_VERSION   default timestamp
+ *   LIGHTBORN_VERSION   else package.json#version, else timestamp
  *   LIGHTBORN_SKIP_BUILD  if "true", skip pnpm run build
  */
 import { execSync } from "node:child_process";
@@ -48,8 +48,13 @@ const apiUrl = (
 ).replace(/\/$/, "");
 const apiKey = process.env.LIGHTBORN_API_KEY || "";
 const submit = process.env.LIGHTBORN_SUBMIT !== "false";
+const pkgVersion =
+  typeof pkg.version === "string" && pkg.version.trim()
+    ? pkg.version.trim()
+    : "";
 const version =
   process.env.LIGHTBORN_VERSION ||
+  pkgVersion ||
   new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
 const skipBuild = process.env.LIGHTBORN_SKIP_BUILD === "true";
 

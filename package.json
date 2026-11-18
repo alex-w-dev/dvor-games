@@ -3,7 +3,8 @@
   "private": true,
   "packageManager": "pnpm@10.27.0",
   "scripts": {
-    "deploy": "node packages/deploy/bin/deploy-game.mjs"
+    "deploy": "node packages/deploy/bin/deploy-game.mjs",
+    "ci:deploy": "node packages/deploy/bin/ci-deploy-changed.mjs"
   },
   "devDependencies": {
     "@lightborn-games/deploy": "workspace:*"

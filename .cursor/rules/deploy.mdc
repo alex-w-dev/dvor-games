@@ -20,10 +20,18 @@ alwaysApply: true
 | `LIGHTBORN_API_KEY` | Обязательно. Ключ: кабинет → Профиль → API-ключ |
 | `LIGHTBORN_API_URL` | По умолчанию `https://lightborn.ru/main-api` |
 | `LIGHTBORN_SUBMIT` | `true`/`false`, по умолчанию `true` (сразу на модерацию) |
-| `LIGHTBORN_VERSION` | Версия zip; иначе timestamp `YYYYMMDDhhmmss` |
+| `LIGHTBORN_VERSION` | Метка версии; иначе `package.json#version`, иначе timestamp |
 | `LIGHTBORN_SKIP_BUILD` | `true` — не вызывать `pnpm run build` |
 
 Образец: `.env.example`.
+
+## CI (GitHub Actions)
+
+- На `push` в `master`: `pnpm run ci:deploy` — только игры с изменениями в `games/<name>/`.
+- Версия — **только** поле `version` из `package.json` игры (то же, что на платформе при ручной загрузке). Не генерируется.
+- Если метка уже есть на сервере — skip. Если слотов 3 — удаляется самая старая неопубликованная.
+- Secret: `LIGHTBORN_API_KEY` (для publish в `/play` — ключ admin-аккаунта).
+- Чтобы выкатить игру: подними `version` в её `package.json` и закоммить изменения в `games/<name>/`.
 
 ## Требования к zip
 
