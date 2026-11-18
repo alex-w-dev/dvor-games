@@ -69,7 +69,7 @@ function upsertBoard(list, entry, metric) {
 }
 
 function recordMatchStats(ctx) {
-  if (!ctx.player || !ctx.player.getServerData || !ctx.player.setServerData) {
+  if (!ctx.player || !ctx.player.getData || !ctx.player.setData) {
     return;
   }
   if (!ctx.game || !ctx.game.getData || !ctx.game.setData) {
@@ -91,7 +91,7 @@ function recordMatchStats(ctx) {
       var matchScore = (ctx.state.scores[playerId] || 0) | 0;
       var won = winnerId && playerId === winnerId ? 1 : 0;
       var name = playerLabel(ctx, playerId);
-      return ctx.player.getServerData(playerId).then(function (data) {
+      return ctx.player.getData(playerId).then(function (data) {
         var prev = data && typeof data === "object" ? data : {};
         var next = Object.assign({}, prev, {
           score: ((prev.score || 0) | 0) + matchScore,
@@ -105,7 +105,7 @@ function recordMatchStats(ctx) {
           wins: next.wins,
           games: next.games,
         });
-        return ctx.player.setServerData(playerId, next);
+        return ctx.player.setData(playerId, next);
       });
     });
   });

@@ -4,8 +4,7 @@
  *
  *   const sdk = await PlatformSDK.init();
  *   const player = await sdk.getPlayer();
- *   await sdk.player.setClientData({ mute: true });
- *   const server = await sdk.player.getServerData();
+ *   await sdk.player.setData({ level: 3 });
  *   const shared = await sdk.game.getData();
  */
 (function (root) {
@@ -172,32 +171,13 @@
         });
       },
       player: {
-        getClientData: function () {
-          return request("player-get-client-data").then(function (res) {
-            return res.data || {};
-          });
-        },
-        setClientData: function (data) {
-          return request("player-set-client-data", { data: data || {} }).then(
-            function () {
-              return undefined;
-            },
-          );
-        },
-        getServerData: function () {
-          return request("player-get-server-data").then(function (res) {
-            return res.data || {};
-          });
-        },
-        /** @deprecated alias → getClientData */
         getData: function () {
-          return request("player-get-client-data").then(function (res) {
+          return request("player-get-data").then(function (res) {
             return res.data || {};
           });
         },
-        /** @deprecated alias → setClientData */
         setData: function (data) {
-          return request("player-set-client-data", { data: data || {} }).then(
+          return request("player-set-data", { data: data || {} }).then(
             function () {
               return undefined;
             },

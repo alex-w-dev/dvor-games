@@ -145,8 +145,8 @@
       renderBoards(boardsCache);
     }
     try {
-      if (sdk.player && sdk.player.getServerData) {
-        const mine = await sdk.player.getServerData();
+      if (sdk.player && sdk.player.getData) {
+        const mine = await sdk.player.getData();
         renderMyStats(mine);
       }
     } catch (_) {
