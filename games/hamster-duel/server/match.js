@@ -191,6 +191,7 @@ globalThis.hooks = {
       timeLeft: MATCH_SEC,
       scores: {},
       sides: { left: null, right: null },
+      colors: {},
       cells: emptyCells(),
       spawnIn: 0,
       nextMoleId: 1,
@@ -203,6 +204,16 @@ globalThis.hooks = {
 
   onJoin: function (ctx, player) {
     ctx.state.scores[player.id] = ctx.state.scores[player.id] || 0;
+    if (!ctx.state.colors) ctx.state.colors = {};
+    ctx.state.colors[player.id] = ctx.state.colors[player.id] || "red";
+    if (ctx.player && ctx.player.getData) {
+      ctx.player.getData(player.id).then(function (data) {
+        var color =
+          data && typeof data.sideColor === "string" ? data.sideColor : "red";
+        if (!ctx.state.colors) ctx.state.colors = {};
+        ctx.state.colors[player.id] = color;
+      });
+    }
     var n = connectedIds(ctx).length;
     ctx.log("join", player.id, "connected=" + n, "phase=" + ctx.state.phase);
     if (ctx.state.phase === "waiting" && n >= 2) {
@@ -218,6 +229,7 @@ globalThis.hooks = {
     }
     if (ctx.state.phase === "waiting") {
       delete ctx.state.scores[player.id];
+      if (ctx.state.colors) delete ctx.state.colors[player.id];
     }
   },
 

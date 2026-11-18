@@ -182,6 +182,71 @@ body.in-match #overlay:not([hidden]) #to-lobby {
   gap: 1rem;
 }
 
+.color-picker {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.color-picker__label {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.color-swatch {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.55rem;
+  border: 2px solid #f6e7d044;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+}
+
+.color-swatch[data-color="red"] {
+  background: #c62828;
+}
+.color-swatch[data-color="blue"] {
+  background: #1565c0;
+}
+.color-swatch[data-color="green"] {
+  background: #2e7d32;
+}
+.color-swatch[data-color="black"] {
+  background: #111;
+}
+
+.color-swatch.is-selected {
+  border-color: #ffb703;
+  box-shadow: 0 0 0 2px #ffb70388;
+}
+
+.color-swatch.is-locked {
+  opacity: 0.55;
+}
+
+.color-swatch.is-locked::after {
+  content: "✦";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #ffb703;
+  font-size: 0.95rem;
+  text-shadow: 0 1px 2px #000;
+}
+
+.color-swatch:disabled {
+  cursor: default;
+}
+
 .lobby-rules {
   margin: 0;
   color: var(--muted);
@@ -306,14 +371,35 @@ body.in-match #cancel-wait:not([hidden]) {
   border-radius: 50%;
   background:
     radial-gradient(circle at 35% 30%, #fff6, transparent 40%),
-    linear-gradient(145deg, var(--left), #1a3040);
+    linear-gradient(
+      145deg,
+      var(--side-color, var(--left)),
+      color-mix(in srgb, var(--side-color, var(--left)) 40%, #000)
+    );
   border: 3px solid #f6e7d088;
 }
 
 #side-right .portrait {
   background:
     radial-gradient(circle at 35% 30%, #fff6, transparent 40%),
-    linear-gradient(145deg, var(--right), #4a2010);
+    linear-gradient(
+      145deg,
+      var(--side-color, var(--right)),
+      color-mix(in srgb, var(--side-color, var(--right)) 40%, #000)
+    );
+}
+
+.side[data-color="red"] {
+  --side-color: #c62828;
+}
+.side[data-color="blue"] {
+  --side-color: #1565c0;
+}
+.side[data-color="green"] {
+  --side-color: #2e7d32;
+}
+.side[data-color="black"] {
+  --side-color: #1a1a1a;
 }
 
 .side .name {

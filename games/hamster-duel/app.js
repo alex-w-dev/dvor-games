@@ -21,6 +21,13 @@
   const cancelWaitBtn = document.getElementById("cancel-wait");
   const hammer = document.getElementById("cursor-hammer");
   const cells = Array.from(document.querySelectorAll(".cell"));
+  const colorSwatchesEl = document.getElementById("color-swatches");
+  const colorStatusEl = document.getElementById("color-status");
+
+  const FREE_COLORS = ["red", "blue", "green"];
+  const PAID_COLOR = "black";
+  const PAID_PRODUCT_ID = "color_black";
+  const ALL_COLORS = FREE_COLORS.concat([PAID_COLOR]);
 
   let sdk = null;
   let meId = "";
@@ -29,6 +36,11 @@
   let inMatch = false;
   let handlersBound = false;
   let boardsCache = { topScore: [], topWins: [], topGames: [] };
+  let playerSave = {};
+  let sideColor = "red";
+  let unlockedColors = FREE_COLORS.slice();
+  let blackPriceLeaves = null;
+  let colorBusy = false;
 
   function setLobbyStatus(text) {
     lobbyStatus.textContent = text || "";
@@ -128,10 +140,173 @@
       "Вы: " + score + " очков · " + wins + " побед · " + games + " игр";
   }
 
+  function normalizeColors(data) {
+    const prev = data && typeof data === "object" ? data : {};
+    let unlocked = Array.isArray(prev.unlockedColors)
+      ? prev.unlockedColors.filter(function (c) {
+          return ALL_COLORS.indexOf(c) >= 0;
+        })
+      : [];
+    FREE_COLORS.forEach(function (c) {
+      if (unlocked.indexOf(c) < 0) unlocked.push(c);
+    });
+    let color =
+      typeof prev.sideColor === "string" && unlocked.indexOf(prev.sideColor) >= 0
+        ? prev.sideColor
+        : "red";
+    return { unlockedColors: unlocked, sideColor: color };
+  }
+
+  function setColorStatus(text) {
+    if (colorStatusEl) colorStatusEl.textContent = text || "";
+  }
+
+  function renderColorPicker() {
+    if (!colorSwatchesEl) return;
+    colorSwatchesEl.innerHTML = "";
+    ALL_COLORS.forEach(function (color) {
+      const unlocked = unlockedColors.indexOf(color) >= 0;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "color-swatch";
+      btn.dataset.color = color;
+      btn.title = unlocked
+        ? color
+        : "Купить" +
+          (blackPriceLeaves != null ? " · " + blackPriceLeaves + " Leaves" : "");
+      if (color === sideColor) btn.classList.add("is-selected");
+      if (!unlocked) btn.classList.add("is-locked");
+      btn.disabled = colorBusy;
+      btn.addEventListener("click", function () {
+        onColorClick(color);
+      });
+      colorSwatchesEl.appendChild(btn);
+    });
+  }
+
+  async function persistColors(nextColor, nextUnlocked) {
+    sideColor = nextColor;
+    unlockedColors = nextUnlocked.slice();
+    playerSave = Object.assign({}, playerSave, {
+      sideColor: sideColor,
+      unlockedColors: unlockedColors,
+    });
+    renderColorPicker();
+    if (sdk && sdk.player && sdk.player.setData) {
+      await sdk.player.setData(playerSave);
+    }
+  }
+
+  async function buyBlackColor() {
+    if (!sdk || !sdk.payments || !sdk.payments.purchase) {
+      setColorStatus("Покупки недоступны в этой сборке SDK.");
+      return;
+    }
+    colorBusy = true;
+    renderColorPicker();
+    setColorStatus("Покупка…");
+    let purchaseId = null;
+    try {
+      const pending = await sdk.payments.purchase(PAID_PRODUCT_ID);
+      purchaseId = pending && pending.purchaseId;
+      const nextUnlocked = unlockedColors.slice();
+      if (nextUnlocked.indexOf(PAID_COLOR) < 0) nextUnlocked.push(PAID_COLOR);
+      await persistColors(PAID_COLOR, nextUnlocked);
+      await sdk.payments.confirmPurchase(purchaseId);
+      setColorStatus("Чёрный цвет разблокирован.");
+    } catch (e) {
+      if (purchaseId) {
+        try {
+          const rolled = unlockedColors.filter(function (c) {
+            return c !== PAID_COLOR;
+          });
+          const fallback =
+            rolled.indexOf(sideColor) >= 0 ? sideColor : "red";
+          await persistColors(fallback, rolled);
+        } catch (_) {}
+      }
+      setColorStatus(
+        "Покупка не удалась: " + (e && e.message ? e.message : e),
+      );
+    } finally {
+      colorBusy = false;
+      renderColorPicker();
+    }
+  }
+
+  async function onColorClick(color) {
+    if (colorBusy) return;
+    if (unlockedColors.indexOf(color) >= 0) {
+      if (color === sideColor) return;
+      colorBusy = true;
+      renderColorPicker();
+      try {
+        await persistColors(color, unlockedColors);
+        setColorStatus("");
+      } catch (e) {
+        setColorStatus(
+          "Не удалось сохранить цвет: " + (e && e.message ? e.message : e),
+        );
+      } finally {
+        colorBusy = false;
+        renderColorPicker();
+      }
+      return;
+    }
+    if (color === PAID_COLOR) {
+      await buyBlackColor();
+    }
+  }
+
+  async function syncColorsFromSaveAndEntitlements() {
+    let mine = {};
+    try {
+      if (sdk && sdk.player && sdk.player.getData) {
+        mine = (await sdk.player.getData()) || {};
+      }
+    } catch (_) {
+      mine = {};
+    }
+    playerSave = mine && typeof mine === "object" ? mine : {};
+    const normalized = normalizeColors(playerSave);
+    unlockedColors = normalized.unlockedColors;
+    sideColor = normalized.sideColor;
+
+    try {
+      if (sdk && sdk.payments && sdk.payments.getEntitlements) {
+        const ents = await sdk.payments.getEntitlements();
+        const hasBlack = (ents || []).some(function (e) {
+          return e && e.productId === PAID_PRODUCT_ID;
+        });
+        if (hasBlack && unlockedColors.indexOf(PAID_COLOR) < 0) {
+          unlockedColors = unlockedColors.concat([PAID_COLOR]);
+          await persistColors(sideColor, unlockedColors);
+        }
+      }
+    } catch (_) {
+      /* guest / no payments */
+    }
+
+    try {
+      if (sdk && sdk.payments && sdk.payments.listProducts) {
+        const products = await sdk.payments.listProducts();
+        const black = (products || []).find(function (p) {
+          return p && p.productId === PAID_PRODUCT_ID;
+        });
+        blackPriceLeaves = black ? black.priceLeaves : null;
+      }
+    } catch (_) {
+      blackPriceLeaves = null;
+    }
+
+    renderColorPicker();
+  }
+
   async function refreshLobbyStats() {
     if (!sdk) {
       renderBoards({});
       renderMyStats(null);
+      renderColorPicker();
       return;
     }
     try {
@@ -147,17 +322,28 @@
     try {
       if (sdk.player && sdk.player.getData) {
         const mine = await sdk.player.getData();
+        playerSave = mine && typeof mine === "object" ? mine : {};
         renderMyStats(mine);
       }
     } catch (_) {
       /* keep previous */
     }
+    await syncColorsFromSaveAndEntitlements();
   }
 
   function labelPlayer(id, fallback) {
     if (!id) return fallback;
     if (id === meId) return "Вы";
     return "Соперник";
+  }
+
+  function applySideColor(el, playerId, state) {
+    const colors = state.colors || {};
+    const color =
+      (playerId && colors[playerId]) ||
+      (playerId === meId ? sideColor : null) ||
+      "red";
+    el.dataset.color = color;
   }
 
   function renderSides(state) {
@@ -176,6 +362,8 @@
     right.querySelector(".score").textContent = String(
       (state.scores && rightId && state.scores[rightId]) || 0,
     );
+    applySideColor(left, leftId, state);
+    applySideColor(right, rightId, state);
   }
 
   function renderCells(state) {
