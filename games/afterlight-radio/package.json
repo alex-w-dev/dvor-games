@@ -2,14 +2,14 @@
   "name": "@games/afterlight-radio",
   "private": true,
   "version": "0.0.0",
-  "lightborn": {
+  "dvor": {
     "slug": "afterlight-radio"
   },
   "scripts": {
     "build": "node ../../packages/deploy/bin/copy-static.mjs",
-    "deploy": "lightborn-deploy"
+    "deploy": "dvor-deploy"
   },
   "devDependencies": {
-    "@lightborn-games/deploy": "workspace:*"
+    "@dvor-games/deploy": "workspace:*"
   }
 }

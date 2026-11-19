@@ -1,10 +1,10 @@
 {
-  "name": "@lightborn-games/deploy",
+  "name": "@dvor-games/deploy",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "bin": {
-    "lightborn-deploy": "./bin/lightborn-deploy.mjs"
+    "dvor-deploy": "./bin/dvor-deploy.mjs"
   },
   "dependencies": {
     "adm-zip": "^0.5.18"

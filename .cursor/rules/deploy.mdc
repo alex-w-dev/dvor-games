@@ -1,27 +1,27 @@
 ---
-description: Деплой мини-игр на lightborn.ru (env, API, zip)
+description: Деплой мини-игр на dvor.ru (env, API, zip)
 alwaysApply: true
 ---
 
-# Деплой мини-игр на lightborn.ru
+# Деплой мини-игр на dvor.ru
 
 ## Цикл
 
-1. В кабинете https://lightborn.ru/cabinet/games создай игру с нужным **slug** (CLI карточку не создаёт).
+1. В кабинете https://dvor-play.ru/cabinet/games создай игру с нужным **slug** (CLI карточку не создаёт).
 2. Локально: `pnpm run deploy <folder>` из корня фермы (например `pnpm run deploy hello`).
 3. CLI: `build` → zip `dist/` → `POST …/developer/games/{slug}/deploy` с `X-Api-Key`.
-4. Версия появляется как draft (или сразу на модерацию, если `LIGHTBORN_SUBMIT=true`).
+4. Версия появляется как draft (или сразу на модерацию, если `DVOR_SUBMIT=true`).
 5. Превью: `/draft/<id>/<version>`. После модерации: `/play/<slug>`.
 
 ## Env (корневой `.env`, не коммитить)
 
 | Переменная | Назначение |
 |---|---|
-| `LIGHTBORN_API_KEY` | Обязательно. Ключ: кабинет → Профиль → API-ключ |
-| `LIGHTBORN_API_URL` | По умолчанию `https://lightborn.ru/main-api` |
-| `LIGHTBORN_SUBMIT` | `true`/`false`, по умолчанию `true` (сразу на модерацию) |
-| `LIGHTBORN_VERSION` | Метка версии; иначе `package.json#version`, иначе timestamp |
-| `LIGHTBORN_SKIP_BUILD` | `true` — не вызывать `pnpm run build` |
+| `DVOR_API_KEY` | Обязательно. Ключ: кабинет → Профиль → API-ключ |
+| `DVOR_API_URL` | По умолчанию `https://dvor-play.ru/main-api` |
+| `DVOR_SUBMIT` | `true`/`false`, по умолчанию `true` (сразу на модерацию) |
+| `DVOR_VERSION` | Метка версии; иначе `package.json#version`, иначе timestamp |
+| `DVOR_SKIP_BUILD` | `true` — не вызывать `pnpm run build` |
 
 Образец: `.env.example`.
 
@@ -30,18 +30,18 @@ alwaysApply: true
 - На `push` в `master`: `pnpm run ci:deploy` — только игры с изменениями в `games/<name>/`.
 - Версия — **только** поле `version` из `package.json` игры (то же, что на платформе при ручной загрузке). Не генерируется.
 - Если метка уже есть на сервере — skip. Если слотов 3 — удаляется самая старая неопубликованная.
-- Secret: `LIGHTBORN_API_KEY` (для publish в `/play` — ключ admin-аккаунта).
+- Secret: `DVOR_API_KEY` (для publish в `/play` — ключ admin-аккаунта).
 - Чтобы выкатить игру: подними `version` в её `package.json` и закоммить изменения в `games/<name>/`.
 
 ## Требования к zip
 
 - В корне архива есть `index.html`.
 - Лимит 100 MB.
-- SDK платформы: в HTML абсолютный URL `<script src="https://lightborn.ru/sdk.js"></script>` (относительный путь с S3 не сработает).
-- Игра должна быть создана в кабинете с тем же `lightborn.slug`, что в `package.json`.
+- SDK платформы: в HTML абсолютный URL `<script src="https://dvor-play.ru/sdk.js"></script>` (относительный путь с S3 не сработает).
+- Игра должна быть создана в кабинете с тем же `dvor.slug`, что в `package.json`.
 
 ## Команды
 
 - Из корня: `pnpm run deploy <name>` (`name` = папка в `games/`).
-- Из папки игры: `pnpm run deploy` (вызывает `lightborn-deploy`).
+- Из папки игры: `pnpm run deploy` (вызывает `dvor-deploy`).
 - Не использовать `pnpm deploy` без `run` — это встроенная команда pnpm, не наш скрипт.

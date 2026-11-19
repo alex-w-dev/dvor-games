@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Build (optional) + zip dist + POST to Lightborn Deploy API.
+ * Build (optional) + zip dist + POST to Dvor Deploy API.
  * Run from a game package directory (cwd = games/<name>).
  *
  * Env (repo root .env):
- *   LIGHTBORN_API_KEY   required
- *   LIGHTBORN_API_URL   default https://lightborn.ru/main-api
- *   LIGHTBORN_SUBMIT    default true
- *   LIGHTBORN_VERSION   else package.json#version, else timestamp
- *   LIGHTBORN_SKIP_BUILD  if "true", skip pnpm run build
+ *   DVOR_API_KEY   required
+ *   DVOR_API_URL   default https://dvor-play.ru/main-api
+ *   DVOR_SUBMIT    default true
+ *   DVOR_VERSION   else package.json#version, else timestamp
+ *   DVOR_SKIP_BUILD  if "true", skip pnpm run build
  */
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -36,31 +36,31 @@ if (!existsSync(pkgPath)) {
 }
 
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-const slug = pkg.lightborn?.slug;
+const slug = pkg.dvor?.slug;
 if (!slug || typeof slug !== "string") {
-  console.error('package.json must have lightborn.slug (e.g. "hello")');
+  console.error('package.json must have dvor.slug (e.g. "hello")');
   process.exit(1);
 }
 
 const apiUrl = (
-  process.env.LIGHTBORN_API_URL ||
-  "https://lightborn.ru/main-api"
+  process.env.DVOR_API_URL ||
+  "https://dvor-play.ru/main-api"
 ).replace(/\/$/, "");
-const apiKey = process.env.LIGHTBORN_API_KEY || "";
-const submit = process.env.LIGHTBORN_SUBMIT !== "false";
+const apiKey = process.env.DVOR_API_KEY || "";
+const submit = process.env.DVOR_SUBMIT !== "false";
 const pkgVersion =
   typeof pkg.version === "string" && pkg.version.trim()
     ? pkg.version.trim()
     : "";
 const version =
-  process.env.LIGHTBORN_VERSION ||
+  process.env.DVOR_VERSION ||
   pkgVersion ||
   new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
-const skipBuild = process.env.LIGHTBORN_SKIP_BUILD === "true";
+const skipBuild = process.env.DVOR_SKIP_BUILD === "true";
 
 if (!apiKey) {
   console.error(
-    "LIGHTBORN_API_KEY is required (root .env — see .env.example)",
+    "DVOR_API_KEY is required (root .env — see .env.example)",
   );
   process.exit(1);
 }
@@ -113,4 +113,4 @@ if (!res.ok) {
   process.exit(1);
 }
 console.log("deployed:", text);
-console.log("play: https://lightborn.ru/play/" + slug);
+console.log("play: https://dvor-play.ru/play/" + slug);

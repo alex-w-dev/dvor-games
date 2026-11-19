@@ -1,15 +1,15 @@
 {
   "name": "@games/hamster-duel",
   "private": true,
-  "version": "0.1.0",
-  "lightborn": {
+  "version": "0.1.1",
+  "dvor": {
     "slug": "hamster-duel"
   },
   "scripts": {
     "build": "node ../../packages/deploy/bin/copy-static.mjs",
-    "deploy": "lightborn-deploy"
+    "deploy": "dvor-deploy"
   },
   "devDependencies": {
-    "@lightborn-games/deploy": "workspace:*"
+    "@dvor-games/deploy": "workspace:*"
   }
 }

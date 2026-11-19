@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "lightborn": {
+  "dvor": {
     "slug": "roguelike"
   },
   "scripts": {
@@ -11,14 +11,14 @@
     "build": "tsc -b && cross-env PLATFORM_BASE=./ vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "deploy": "lightborn-deploy"
+    "deploy": "dvor-deploy"
   },
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
-    "@lightborn-games/deploy": "workspace:*",
+    "@dvor-games/deploy": "workspace:*",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",

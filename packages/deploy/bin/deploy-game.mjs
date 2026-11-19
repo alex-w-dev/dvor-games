@@ -26,5 +26,5 @@ if (!existsSync(pkgPath)) {
 }
 
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-console.log(`==> deploy @games/${name} (slug=${pkg.lightborn?.slug ?? "?"})`);
+console.log(`==> deploy @games/${name} (slug=${pkg.dvor?.slug ?? "?"})`);
 execSync("pnpm run deploy", { cwd: gameRoot, stdio: "inherit" });

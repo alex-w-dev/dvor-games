@@ -1,6 +1,6 @@
 /**
  * Lightborn Platform SDK
- * Load from the platform origin, e.g. https://lightborn.ru/sdk.js
+ * Load from the platform origin, e.g. https://dvor-play.ru/sdk.js
  *
  *   const sdk = await PlatformSDK.init();
  *   const player = await sdk.getPlayer();

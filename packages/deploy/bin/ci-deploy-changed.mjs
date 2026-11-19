@@ -5,8 +5,8 @@
  * Frees a slot (max 3) by deleting the oldest non-published version.
  *
  * Env:
- *   LIGHTBORN_API_KEY   required
- *   LIGHTBORN_API_URL   default https://lightborn.ru/main-api
+ *   DVOR_API_KEY   required
+ *   DVOR_API_URL   default https://dvor-play.ru/main-api
  *   GITHUB_EVENT_BEFORE / GITHUB_SHA  optional (GitHub Actions)
  */
 import { execSync } from "node:child_process";
@@ -22,13 +22,13 @@ const gamesRoot = path.join(repoRoot, "games");
 loadEnvFile(path.join(repoRoot, ".env"));
 
 const apiUrl = (
-  process.env.LIGHTBORN_API_URL ||
-  "https://lightborn.ru/main-api"
+  process.env.DVOR_API_URL ||
+  "https://dvor-play.ru/main-api"
 ).replace(/\/$/, "");
-const apiKey = process.env.LIGHTBORN_API_KEY || "";
+const apiKey = process.env.DVOR_API_KEY || "";
 
 if (!apiKey) {
-  console.error("LIGHTBORN_API_KEY is required");
+  console.error("DVOR_API_KEY is required");
   process.exit(1);
 }
 
@@ -145,11 +145,11 @@ async function deployGame(name) {
   const pkg = JSON.parse(
     readFileSync(path.join(gameRoot, "package.json"), "utf8"),
   );
-  const slug = pkg.lightborn?.slug;
+  const slug = pkg.dvor?.slug;
   const version =
     typeof pkg.version === "string" ? pkg.version.trim() : "";
   if (!slug || typeof slug !== "string") {
-    throw new Error(`${name}: package.json lightborn.slug required`);
+    throw new Error(`${name}: package.json dvor.slug required`);
   }
   if (!version) {
     throw new Error(
@@ -179,10 +179,10 @@ async function deployGame(name) {
     stdio: "inherit",
     env: {
       ...process.env,
-      LIGHTBORN_API_KEY: apiKey,
-      LIGHTBORN_API_URL: apiUrl,
-      LIGHTBORN_VERSION: version,
-      LIGHTBORN_SUBMIT: "true",
+      DVOR_API_KEY: apiKey,
+      DVOR_API_URL: apiUrl,
+      DVOR_VERSION: version,
+      DVOR_SUBMIT: "true",
     },
   });
   return "deployed";

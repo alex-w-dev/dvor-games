@@ -1,5 +1,5 @@
 {
-  "name": "lightborn-games",
+  "name": "dvor-games",
   "private": true,
   "packageManager": "pnpm@10.27.0",
   "scripts": {
@@ -7,6 +7,6 @@
     "ci:deploy": "node packages/deploy/bin/ci-deploy-changed.mjs"
   },
   "devDependencies": {
-    "@lightborn-games/deploy": "workspace:*"
+    "@dvor-games/deploy": "workspace:*"
   }
 }

@@ -1,15 +1,15 @@
 ---
-description: Ферма микроигр lightborn-games — общие правила
+description: Ферма микроигр dvor-games — общие правила
 alwaysApply: true
 ---
 
-# Ферма микроигр lightborn-games
+# Ферма микроигр dvor-games
 
-- Это монорепо **мини-игр** для платформы [lightborn.ru](https://lightborn.ru/). Платформенный код — в соседнем репо `l-fight-mobile`; его не править из этой фермы.
+- Это монорепо **мини-игр** для платформы [dvor.ru](https://dvor-play.ru/). Платформенный код — в соседнем репо `dvor`; его не править из этой фермы.
 - **Git**: только ветка `master`. Ветки не создавать. Не коммитить и не пушить, пока явно не попросили.
 - Делай только запрошенное. README и тесты — только по просьбе.
 - Игры — простые HTML5 (статика). Без лишних абстракций, баррелей и «обвязки на будущее».
-- Новая игра: папка `games/<name>/` с `package.json` (`name`: `@games/<name>`, `lightborn.slug`), `index.html`, скрипты `build` / `deploy`.
+- Новая игра: папка `games/<name>/` с `package.json` (`name`: `@games/<name>`, `dvor.slug`), `index.html`, скрипты `build` / `deploy`.
 - Импортируй из файла объявления. Локальные `index`-баррели и `export {…} from` не создавать.
 - Ассеты для игр — через MCP `dataset-assets` (см. правило mcp-assets). Скопированные файлы клади в `games/<name>/assets/` или `src/`.
-- Деплой — только через общий CLI (`pnpm run deploy <name>`). VM платформы и `l-fight-mobile` не деплоить отсюда.
+- Деплой — только через общий CLI (`pnpm run deploy <name>`). VM платформы и `dvor` не деплоить отсюда.
