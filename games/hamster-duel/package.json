@@ -1,9 +1,10 @@
 {
   "name": "@games/hamster-duel",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "dvor": {
-    "slug": "hamster-duel"
+    "slug": "hamster-duel",
+    "icon": "assets/icon-512.png"
   },
   "scripts": {
     "build": "node ../../packages/deploy/bin/copy-static.mjs",

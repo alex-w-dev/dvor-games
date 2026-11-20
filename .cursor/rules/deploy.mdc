@@ -9,9 +9,30 @@ alwaysApply: true
 
 1. В кабинете https://dvor-play.ru/cabinet/games создай игру с нужным **slug** (CLI карточку не создаёт).
 2. Локально: `pnpm run deploy <folder>` из корня фермы (например `pnpm run deploy hello`).
-3. CLI: `build` → zip `dist/` → `POST …/developer/games/{slug}/deploy` с `X-Api-Key`.
+3. CLI: `build` → zip `dist/` → `POST …/developer/games/{slug}/release` с `X-Api-Key` (опционально медиа/`card` из `package.json#dvor`).
 4. Версия появляется как draft (или сразу на модерацию, если `DVOR_SUBMIT=true`).
 5. Превью: `/draft/<id>/<version>`. После модерации: `/play/<slug>`.
+
+## Версия
+
+Обязательна: `DVOR_VERSION` или `package.json#version`. Только цифры и одиночные точки, 2–4 сегмента, длина 3…16 (`0.1.1`, `1.0`). Timestamp-fallback нет.
+
+## Медиа / card
+
+В `package.json` игры:
+
+```json
+"dvor": {
+  "slug": "hello",
+  "icon": "assets/icon-512.png",
+  "cover": "assets/cover.png",
+  "coverShowcase": "assets/cover-showcase.png",
+  "screenshots": [{ "path": "assets/shot.png", "device": "desktop" }],
+  "card": { "title": "…" }
+}
+```
+
+Переданные файлы/поля — sparse replace на publish. Env-оверрайды путей: `DVOR_ICON`, `DVOR_COVER`, `DVOR_COVER_SHOWCASE`. Только карточка/медиа без zip: `DVOR_CARD_ONLY=true`.
 
 ## Env (корневой `.env`, не коммитить)
 
@@ -20,8 +41,10 @@ alwaysApply: true
 | `DVOR_API_KEY` | Обязательно. Ключ: кабинет → Профиль → API-ключ |
 | `DVOR_API_URL` | По умолчанию `https://dvor-play.ru/main-api` |
 | `DVOR_SUBMIT` | `true`/`false`, по умолчанию `true` (сразу на модерацию) |
-| `DVOR_VERSION` | Метка версии; иначе `package.json#version`, иначе timestamp |
+| `DVOR_VERSION` | Метка версии; иначе `package.json#version` (обязательна) |
 | `DVOR_SKIP_BUILD` | `true` — не вызывать `pnpm run build` |
+| `DVOR_CARD_ONLY` | `true` — без build/zip, только медиа/`card` |
+| `DVOR_ICON` / `DVOR_COVER` / `DVOR_COVER_SHOWCASE` | Пути к PNG, перекрывают `dvor.*` |
 
 Образец: `.env.example`.
 
