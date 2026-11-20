@@ -4,12 +4,8 @@
   const lobbyPlayer = document.getElementById("lobby-player");
   const lobbyStatus = document.getElementById("lobby-status");
   const myStatsEl = document.getElementById("my-stats");
-  const boardScoreEl = document.getElementById("board-score");
-  const boardScoreEmpty = document.getElementById("board-score-empty");
-  const boardWinsEl = document.getElementById("board-wins");
-  const boardWinsEmpty = document.getElementById("board-wins-empty");
-  const boardGamesEl = document.getElementById("board-games");
-  const boardGamesEmpty = document.getElementById("board-games-empty");
+  const boardRatingEl = document.getElementById("board-rating");
+  const boardRatingEmpty = document.getElementById("board-rating-empty");
   const statusEl = document.getElementById("status");
   const timerEl = document.getElementById("timer");
   const joinBtn = document.getElementById("join");
@@ -128,20 +124,44 @@
     document.body.classList.add("in-match");
   }
 
-  function renderBoard(listEl, emptyEl, list, metric, suffix) {
-    const rows = Array.isArray(list) ? list : [];
-    listEl.innerHTML = "";
-    rows.slice(0, 8).forEach((row, i) => {
-      const li = document.createElement("li");
-      li.innerHTML =
-        '<span class="rank"></span><span class="name"></span><span class="wins"></span>';
-      li.querySelector(".rank").textContent = String(i + 1);
-      li.querySelector(".name").textContent = row.name || "Игрок";
-      li.querySelector(".wins").textContent =
-        ((row[metric] || 0) | 0) + " " + suffix;
-      listEl.appendChild(li);
-    });
-    emptyEl.hidden = rows.length > 0;
+  function takeTop(list, n) {
+    return (Array.isArray(list) ? list : []).slice(0, n);
+  }
+
+  function mergeRatingRows(topScore, topWins, topGames) {
+    const byId = Object.create(null);
+    function absorb(row) {
+      if (!row || row.id == null) return;
+      const id = String(row.id);
+      const prev = byId[id] || {
+        id: row.id,
+        name: row.name || "Игрок",
+        score: 0,
+        wins: 0,
+        games: 0,
+      };
+      byId[id] = {
+        id: prev.id,
+        name: row.name || prev.name,
+        score: Math.max((prev.score || 0) | 0, (row.score || 0) | 0),
+        wins: Math.max((prev.wins || 0) | 0, (row.wins || 0) | 0),
+        games: Math.max((prev.games || 0) | 0, (row.games || 0) | 0),
+      };
+    }
+    takeTop(topScore, 5).forEach(absorb);
+    takeTop(topWins, 5).forEach(absorb);
+    takeTop(topGames, 5).forEach(absorb);
+    return Object.keys(byId)
+      .map(function (id) {
+        return byId[id];
+      })
+      .sort(function (a, b) {
+        const ds = ((b.score || 0) | 0) - ((a.score || 0) | 0);
+        if (ds) return ds;
+        const dw = ((b.wins || 0) | 0) - ((a.wins || 0) | 0);
+        if (dw) return dw;
+        return ((b.games || 0) | 0) - ((a.games || 0) | 0);
+      });
   }
 
   function renderBoards(shared) {
@@ -151,27 +171,33 @@
       topWins: Array.isArray(data.topWins) ? data.topWins : [],
       topGames: Array.isArray(data.topGames) ? data.topGames : [],
     };
-    renderBoard(
-      boardScoreEl,
-      boardScoreEmpty,
+    const rows = mergeRatingRows(
       boardsCache.topScore,
-      "score",
-      "очков",
-    );
-    renderBoard(
-      boardWinsEl,
-      boardWinsEmpty,
       boardsCache.topWins,
-      "wins",
-      "побед",
-    );
-    renderBoard(
-      boardGamesEl,
-      boardGamesEmpty,
       boardsCache.topGames,
-      "games",
-      "игр",
     );
+    boardRatingEl.innerHTML = "";
+    rows.forEach(function (row, i) {
+      const li = document.createElement("li");
+      li.innerHTML =
+        '<span class="rank"></span><span class="name"></span>' +
+        '<span class="num" data-k="score"></span>' +
+        '<span class="num" data-k="wins"></span>' +
+        '<span class="num" data-k="games"></span>';
+      li.querySelector(".rank").textContent = String(i + 1);
+      li.querySelector(".name").textContent = row.name || "Игрок";
+      li.querySelector('[data-k="score"]').textContent = String(
+        (row.score || 0) | 0,
+      );
+      li.querySelector('[data-k="wins"]').textContent = String(
+        (row.wins || 0) | 0,
+      );
+      li.querySelector('[data-k="games"]').textContent = String(
+        (row.games || 0) | 0,
+      );
+      boardRatingEl.appendChild(li);
+    });
+    boardRatingEmpty.hidden = rows.length > 0;
   }
 
   function renderMyStats(data) {

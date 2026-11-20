@@ -8,10 +8,6 @@
     <script src="https://dvor-play.ru/sdk.js"></script>
   </head>
   <body>
-    <div id="portrait-gate" hidden>
-      <p>Дуэль хомячков — только для широкого десктопного окна.</p>
-    </div>
-
     <div id="app">
       <section id="lobby" class="screen">
         <header class="lobby-head">
@@ -22,19 +18,16 @@
         <div class="lobby-body">
           <div class="lobby-rankings">
             <div class="lobby-card">
-              <h2>По очкам</h2>
-              <ol id="board-score" class="champions"></ol>
-              <p id="board-score-empty" class="muted">Пока пусто.</p>
-            </div>
-            <div class="lobby-card">
-              <h2>По победам</h2>
-              <ol id="board-wins" class="champions"></ol>
-              <p id="board-wins-empty" class="muted">Пока пусто.</p>
-            </div>
-            <div class="lobby-card">
-              <h2>По играм</h2>
-              <ol id="board-games" class="champions"></ol>
-              <p id="board-games-empty" class="muted">Пока пусто.</p>
+              <h2>Рейтинг</h2>
+              <div class="champions-head" aria-hidden="true">
+                <span>#</span>
+                <span>Игрок</span>
+                <span>Очки</span>
+                <span>Победы</span>
+                <span>Игры</span>
+              </div>
+              <ol id="board-rating" class="champions"></ol>
+              <p id="board-rating-empty" class="muted">Пока пусто.</p>
             </div>
           </div>
 

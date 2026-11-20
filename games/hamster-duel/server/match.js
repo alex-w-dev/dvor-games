@@ -37,7 +37,7 @@ function startCountdown(ctx) {
   ctx.log("countdown start", ids[0], ids[1]);
 }
 
-var TOP_N = 10;
+var TOP_N = 5;
 
 function playerLabel(ctx, playerId) {
   var p = ctx.players.get(playerId);
@@ -56,11 +56,17 @@ function upsertBoard(list, entry, metric) {
   }
   if (row) {
     row.name = entry.name;
-    row[metric] = entry[metric];
+    row.score = entry.score;
+    row.wins = entry.wins;
+    row.games = entry.games;
   } else {
-    var item = { id: entry.id, name: entry.name };
-    item[metric] = entry[metric];
-    next.push(item);
+    next.push({
+      id: entry.id,
+      name: entry.name,
+      score: entry.score,
+      wins: entry.wins,
+      games: entry.games,
+    });
   }
   next.sort(function (a, b) {
     return ((b && b[metric]) || 0) - ((a && a[metric]) || 0);
