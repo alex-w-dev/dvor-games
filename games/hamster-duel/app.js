@@ -577,6 +577,11 @@
 
   function onState(state) {
     lastState = state || {};
+    var phase = lastState.phase || "waiting";
+    // Не держим inMatch=false после рематча: join() может отдать stale state
+    // предыдущего матча с phase=ended и иначе клики по хомякам молчат.
+    if (phase === "ended") inMatch = false;
+    else inMatch = true;
     showMatch();
     renderSides(lastState);
     renderCells(lastState);
@@ -645,12 +650,19 @@
     overlay.hidden = true;
     lobbyConnected = false;
     try {
+      if (sdk.match.leave) {
+        try {
+          await sdk.match.leave();
+        } catch (_) {}
+      }
       bindMatchHandlers();
       const info = await sdk.match.join();
       inMatch = true;
       meId = (await sdk.getPlayer()).id || meId;
       showMatch();
-      if (info && info.state) onState(info.state);
+      var st = info && info.state;
+      // SDK до фикса мог вернуть roomState прошлого матча (phase=ended).
+      if (st && st.phase && st.phase !== "ended") onState(st);
       else {
         setStatus("Ожидание соперника…");
         cancelWaitBtn.hidden = false;
