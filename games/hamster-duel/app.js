@@ -18,6 +18,7 @@
   const toLobbyBtn = document.getElementById("to-lobby");
   const cancelWaitBtn = document.getElementById("cancel-wait");
   const hammer = document.getElementById("cursor-hammer");
+  const boardStageEl = document.getElementById("board-stage");
   const cells = Array.from(document.querySelectorAll(".cell"));
   const colorSwatchesEl = document.getElementById("color-swatches");
   const colorStatusEl = document.getElementById("color-status");
@@ -582,7 +583,38 @@
     renderPhase(lastState);
   }
 
+  function showLateFloat(serverCell, delay) {
+    if (!boardStageEl) return;
+    const visual =
+      viewMirrored ? mirrorCell(serverCell | 0) : serverCell | 0;
+    const btn = cells[visual];
+    if (!btn) return;
+    const stageRect = boardStageEl.getBoundingClientRect();
+    const cellRect = btn.getBoundingClientRect();
+    const el = document.createElement("span");
+    el.className = "late-float";
+    const d = Number(delay);
+    const text =
+      "−" + (Number.isFinite(d) ? d : 0).toFixed(2) + " с";
+    el.textContent = text;
+    el.style.left =
+      cellRect.left - stageRect.left + cellRect.width / 2 + "px";
+    el.style.top =
+      cellRect.top - stageRect.top + cellRect.height * 0.35 + "px";
+    boardStageEl.appendChild(el);
+    el.addEventListener("animationend", function () {
+      el.remove();
+    });
+  }
+
   function onMatchMessage(type, payload) {
+    if (type === "late") {
+      showLateFloat(
+        payload && payload.cell,
+        payload && payload.delay,
+      );
+      return;
+    }
     if (type === "ended" || type === "match_ended") {
       const next = Object.assign({}, lastState || {}, {
         phase: "ended",

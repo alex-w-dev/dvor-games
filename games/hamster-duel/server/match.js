@@ -4,9 +4,24 @@ var SPAWN_MIN = 0.35;
 var SPAWN_MAX = 1.1;
 var MOLE_TTL_MIN = 0.7;
 var MOLE_TTL_MAX = 1.6;
+var LATE_WINDOW_SEC = 1;
+var FRENZY_START_SEC = 10;
+var FRENZY_MAX_SEC = 5;
+var FRENZY_SPEED_MAX = 1.5;
+
+/** Возраст «недавнего удара» по клетке (сек); вне ctx.state — не уходит клиентам. */
+var lateByCell = emptyLateCells();
 
 function emptyCells() {
   return [null, null, null, null, null, null, null, null, null];
+}
+
+function emptyLateCells() {
+  return [null, null, null, null, null, null, null, null, null];
+}
+
+function roundHundredths(v) {
+  return Math.round(v * 100) / 100;
 }
 
 function connectedPlayers(ctx) {
@@ -37,6 +52,7 @@ function startCountdown(ctx) {
   ctx.state.countdownLeft = COUNTDOWN_SEC;
   ctx.state.timeLeft = MATCH_SEC;
   ctx.state.cells = emptyCells();
+  lateByCell = emptyLateCells();
   ctx.state.spawnIn = 0.2;
   ctx.state.nextMoleId = 1;
   ctx.state.winnerId = null;
@@ -188,6 +204,18 @@ function randRange(a, b) {
   return a + Math.random() * (b - a);
 }
 
+/** 1 → 1.5: с 10 с до 5 с до конца плавно, дальше максимум. */
+function frenzySpeed(ctx) {
+  var t = ctx.state.timeLeft || 0;
+  if (t > FRENZY_START_SEC) return 1;
+  if (t <= FRENZY_MAX_SEC) return FRENZY_SPEED_MAX;
+  return (
+    1 +
+    (FRENZY_SPEED_MAX - 1) *
+      ((FRENZY_START_SEC - t) / (FRENZY_START_SEC - FRENZY_MAX_SEC))
+  );
+}
+
 function spawnMole(ctx) {
   var free = [];
   for (var i = 0; i < 9; i++) {
@@ -196,12 +224,17 @@ function spawnMole(ctx) {
   if (!free.length) return;
   var cell = free[(Math.random() * free.length) | 0];
   var id = ctx.state.nextMoleId++;
-  ctx.state.cells[cell] = { id: id, ttl: randRange(MOLE_TTL_MIN, MOLE_TTL_MAX) };
-  ctx.state.spawnIn = randRange(SPAWN_MIN, SPAWN_MAX);
+  var scale = 1 / frenzySpeed(ctx);
+  ctx.state.cells[cell] = {
+    id: id,
+    ttl: randRange(MOLE_TTL_MIN, MOLE_TTL_MAX) * scale,
+  };
+  ctx.state.spawnIn = randRange(SPAWN_MIN, SPAWN_MAX) * scale;
 }
 
 globalThis.hooks = {
   onCreate: function (ctx) {
+    lateByCell = emptyLateCells();
     ctx.state = {
       phase: "waiting",
       countdownLeft: COUNTDOWN_SEC,
@@ -279,8 +312,18 @@ globalThis.hooks = {
     var cell = payload && typeof payload.cell === "number" ? payload.cell | 0 : -1;
     if (cell < 0 || cell > 8) return;
     var mole = ctx.state.cells[cell];
-    if (!mole) return;
+    if (!mole) {
+      var age = lateByCell[cell];
+      if (age != null && age <= LATE_WINDOW_SEC) {
+        ctx.send(player.id, "late", {
+          cell: cell,
+          delay: roundHundredths(age),
+        });
+      }
+      return;
+    }
     ctx.state.cells[cell] = null;
+    lateByCell[cell] = 0;
     ctx.state.scores[player.id] = ((ctx.state.scores[player.id] || 0) | 0) + 1;
   },
 
@@ -335,7 +378,13 @@ globalThis.hooks = {
       if (m.ttl <= 0) ctx.state.cells[i] = null;
     }
 
-    ctx.state.spawnIn -= dt;
+    for (var j = 0; j < 9; j++) {
+      if (lateByCell[j] == null) continue;
+      lateByCell[j] += dt;
+      if (lateByCell[j] > LATE_WINDOW_SEC) lateByCell[j] = null;
+    }
+
+    ctx.state.spawnIn -= dt * frenzySpeed(ctx);
     if (ctx.state.spawnIn <= 0) spawnMole(ctx);
 
     if (ctx.state.timeLeft <= 0) {
