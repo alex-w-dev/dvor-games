@@ -8,7 +8,9 @@
   const boardRatingEmpty = document.getElementById("board-rating-empty");
   const statusEl = document.getElementById("status");
   const timerEl = document.getElementById("timer");
+  const goCountdownEl = document.getElementById("go-countdown");
   const joinBtn = document.getElementById("join");
+  let lastGoSec = null;
   const overlay = document.getElementById("overlay");
   const overlayTitle = document.getElementById("overlay-title");
   const overlaySub = document.getElementById("overlay-sub");
@@ -38,6 +40,14 @@
   let unlockedColors = FREE_COLORS.slice();
   let blackPriceLeaves = null;
   let colorBusy = false;
+  // true = я на сервере «справа»: UI всегда «я слева/снизу», поле зеркалим по X
+  let viewMirrored = false;
+
+  function mirrorCell(cell) {
+    const c = cell | 0;
+    if (c < 0 || c > 8) return c;
+    return (c / 3 | 0) * 3 + (2 - (c % 3));
+  }
 
   function setLobbyStatus(text) {
     lobbyStatus.textContent = text || "";
@@ -47,10 +57,10 @@
     statusEl.textContent = text;
   }
 
-  function leaveToLobby() {
+  async function leaveToLobby() {
     if (sdk && sdk.match && sdk.match.leave) {
       try {
-        sdk.match.leave();
+        await sdk.match.leave();
       } catch (_) {}
     }
     lobbyConnected = false;
@@ -416,8 +426,11 @@
 
   function labelPlayer(id, fallback) {
     if (!id) return fallback;
-    if (id === meId) return "Вы";
-    return "Соперник";
+    const names = (lastState && lastState.names) || {};
+    const fromState = names[id];
+    if (fromState) return fromState;
+    if (id === meId && meName) return meName;
+    return fallback;
   }
 
   function applySideColor(el, playerId, state) {
@@ -430,30 +443,44 @@
   }
 
   function renderSides(state) {
-    const leftId = state.sides && state.sides.left;
-    const rightId = state.sides && state.sides.right;
+    let leftId = state.sides && state.sides.left;
+    let rightId = state.sides && state.sides.right;
+    // Waiting: show self immediately even before sides land in state.
+    if ((state.phase || "waiting") === "waiting" && meId) {
+      if (!leftId && !rightId) leftId = meId;
+      else if (leftId && !rightId && leftId !== meId) rightId = meId;
+      else if (rightId && !leftId && rightId !== meId) leftId = meId;
+    }
+    // Визуально всегда: я — left (десктоп) / снизу (мобилка через CSS order).
+    viewMirrored = !!(meId && rightId === meId && leftId !== meId);
+    const homeId = viewMirrored ? rightId : leftId;
+    const awayId = viewMirrored ? leftId : rightId;
     const left = document.getElementById("side-left");
     const right = document.getElementById("side-right");
 
-    left.classList.toggle("is-me", leftId === meId);
-    right.classList.toggle("is-me", rightId === meId);
-    left.querySelector(".name").textContent = labelPlayer(leftId, "Игрок 1");
-    right.querySelector(".name").textContent = labelPlayer(rightId, "Игрок 2");
+    left.classList.toggle("is-me", !!(meId && homeId === meId));
+    right.classList.toggle("is-me", false);
+    left.querySelector(".name").textContent = labelPlayer(homeId, "Вы");
+    right.querySelector(".name").textContent = labelPlayer(
+      awayId,
+      (state.phase || "waiting") === "waiting" ? "Ожидание…" : "Соперник",
+    );
     left.querySelector(".score").textContent = String(
-      (state.scores && leftId && state.scores[leftId]) || 0,
+      (state.scores && homeId && state.scores[homeId]) || 0,
     );
     right.querySelector(".score").textContent = String(
-      (state.scores && rightId && state.scores[rightId]) || 0,
+      (state.scores && awayId && state.scores[awayId]) || 0,
     );
-    applySideColor(left, leftId, state);
-    applySideColor(right, rightId, state);
+    applySideColor(left, homeId, state);
+    applySideColor(right, awayId, state);
   }
 
   function renderCells(state) {
     const list = state.cells || [];
     for (let i = 0; i < 9; i++) {
       const btn = cells[i];
-      const mole = list[i];
+      const serverCell = viewMirrored ? mirrorCell(i) : i;
+      const mole = list[serverCell];
       const had = btn.classList.contains("has-mole");
       btn.classList.toggle("has-mole", !!mole);
       if (!mole && had) {
@@ -469,8 +496,26 @@
     }
   }
 
+  function hideGoCountdown() {
+    goCountdownEl.hidden = true;
+    goCountdownEl.textContent = "";
+    goCountdownEl.classList.remove("is-pop");
+    lastGoSec = null;
+  }
+
+  function showGoCountdown(sec) {
+    goCountdownEl.hidden = false;
+    if (sec === lastGoSec) return;
+    lastGoSec = sec;
+    goCountdownEl.textContent = String(sec);
+    goCountdownEl.classList.remove("is-pop");
+    void goCountdownEl.offsetWidth;
+    goCountdownEl.classList.add("is-pop");
+  }
+
   function showResult(state) {
     timerEl.hidden = true;
+    hideGoCountdown();
     setStatus("Матч окончен");
     const win = state.winnerId;
     if (state.reason === "opponent_left") {
@@ -497,9 +542,10 @@
 
   function renderPhase(state) {
     const phase = state.phase || "waiting";
-    timerEl.hidden = !(phase === "countdown" || phase === "playing");
+    timerEl.hidden = phase !== "playing";
 
     if (phase === "waiting") {
+      hideGoCountdown();
       setStatus("Ожидание соперника…");
       cancelWaitBtn.hidden = false;
       overlay.hidden = true;
@@ -508,12 +554,13 @@
     if (phase === "countdown") {
       const sec = Math.max(0, Math.ceil(Number(state.countdownLeft) || 0));
       setStatus("Приготовьтесь");
-      timerEl.textContent = String(sec);
+      showGoCountdown(sec);
       cancelWaitBtn.hidden = true;
       overlay.hidden = true;
       return;
     }
     if (phase === "playing") {
+      hideGoCountdown();
       const left = Math.max(0, Number(state.timeLeft) || 0);
       const sec = Math.max(0, Math.ceil(left - 1e-9));
       setStatus("Бейте хомяков!");
@@ -586,10 +633,13 @@
   }
 
   cells.forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
       if (!sdk || !inMatch) return;
       if (!lastState || lastState.phase !== "playing") return;
-      const cell = Number(btn.dataset.cell);
+      e.preventDefault();
+      const visual = Number(btn.dataset.cell);
+      const cell = viewMirrored ? mirrorCell(visual) : visual;
       sdk.match.send("hit", { cell });
       hammer.classList.add("smash");
       setTimeout(() => hammer.classList.remove("smash"), 80);

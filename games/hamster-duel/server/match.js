@@ -21,9 +21,17 @@ function connectedIds(ctx) {
   });
 }
 
+function syncNames(ctx) {
+  if (!ctx.state.names) ctx.state.names = {};
+  connectedPlayers(ctx).forEach(function (p) {
+    ctx.state.names[p.id] = playerLabel(ctx, p.id);
+  });
+}
+
 function startCountdown(ctx) {
   var ids = connectedIds(ctx);
   if (ids.length < 2) return;
+  syncNames(ctx);
   ctx.state.sides = { left: ids[0], right: ids[1] };
   ctx.state.phase = "countdown";
   ctx.state.countdownLeft = COUNTDOWN_SEC;
@@ -76,10 +84,10 @@ function upsertBoard(list, entry, metric) {
 
 function recordMatchStats(ctx) {
   if (!ctx.player || !ctx.player.getData || !ctx.player.setData) {
-    return;
+    return Promise.resolve();
   }
   if (!ctx.game || !ctx.game.getData || !ctx.game.setData) {
-    return;
+    return Promise.resolve();
   }
   var left = ctx.state.sides && ctx.state.sides.left;
   var right = ctx.state.sides && ctx.state.sides.right;
@@ -87,7 +95,7 @@ function recordMatchStats(ctx) {
   var ids = [];
   if (left) ids.push(left);
   if (right && right !== left) ids.push(right);
-  if (!ids.length) return;
+  if (!ids.length) return Promise.resolve();
 
   var chain = Promise.resolve();
   var snapshots = [];
@@ -116,7 +124,7 @@ function recordMatchStats(ctx) {
     });
   });
 
-  chain
+  return chain
     .then(function () {
       return ctx.game.getData();
     })
@@ -153,6 +161,7 @@ function finish(ctx, reason) {
   ctx.state.reason = reason;
   ctx.state.cells = emptyCells();
   ctx.state.endArmed = false;
+  ctx.state.statsReady = false;
   var left = ctx.state.sides.left;
   var right = ctx.state.sides.right;
   var sl = (ctx.state.scores[left] || 0) | 0;
@@ -168,9 +177,11 @@ function finish(ctx, reason) {
     ctx.state.winnerId = null;
   }
   ctx.log("match end", reason, ctx.state.winnerId);
-  recordMatchStats(ctx);
+  recordMatchStats(ctx).then(function () {
+    ctx.state.statsReady = true;
+  });
   // Не зовём match.end здесь: сначала уйдёт state с phase=ended (после onTick),
-  // на следующем тике закроем комнату.
+  // после записи статистики закроем комнату.
 }
 
 function randRange(a, b) {
@@ -198,6 +209,7 @@ globalThis.hooks = {
       scores: {},
       sides: { left: null, right: null },
       colors: {},
+      names: {},
       cells: emptyCells(),
       spawnIn: 0,
       nextMoleId: 1,
@@ -212,6 +224,20 @@ globalThis.hooks = {
     ctx.state.scores[player.id] = ctx.state.scores[player.id] || 0;
     if (!ctx.state.colors) ctx.state.colors = {};
     ctx.state.colors[player.id] = ctx.state.colors[player.id] || "red";
+    if (!ctx.state.names) ctx.state.names = {};
+    ctx.state.names[player.id] = playerLabel(ctx, player.id);
+    if (!ctx.state.sides) ctx.state.sides = { left: null, right: null };
+    // Waiting: first player already on the field (left), second → right.
+    if (ctx.state.phase === "waiting") {
+      if (!ctx.state.sides.left) {
+        ctx.state.sides.left = player.id;
+      } else if (
+        !ctx.state.sides.right &&
+        ctx.state.sides.left !== player.id
+      ) {
+        ctx.state.sides.right = player.id;
+      }
+    }
     if (ctx.player && ctx.player.getData) {
       ctx.player.getData(player.id).then(function (data) {
         var color =
@@ -236,6 +262,15 @@ globalThis.hooks = {
     if (ctx.state.phase === "waiting") {
       delete ctx.state.scores[player.id];
       if (ctx.state.colors) delete ctx.state.colors[player.id];
+      if (ctx.state.names) delete ctx.state.names[player.id];
+      if (ctx.state.sides) {
+        if (ctx.state.sides.left === player.id) ctx.state.sides.left = null;
+        if (ctx.state.sides.right === player.id) ctx.state.sides.right = null;
+        if (!ctx.state.sides.left && ctx.state.sides.right) {
+          ctx.state.sides.left = ctx.state.sides.right;
+          ctx.state.sides.right = null;
+        }
+      }
     }
   },
 
@@ -257,6 +292,7 @@ globalThis.hooks = {
         ctx.state.endArmed = true;
         return;
       }
+      if (!ctx.state.statsReady) return;
       ctx.match.end(ctx.state.reason || "ended");
       return;
     }

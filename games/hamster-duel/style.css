@@ -18,17 +18,18 @@
 html,
 body {
   margin: 0;
-  min-height: 100%;
+  width: 100%;
+  height: 100%;
   background:
     radial-gradient(ellipse at 50% 20%, #5a3a22 0%, transparent 55%),
     linear-gradient(180deg, var(--bg1), var(--bg0));
   color: var(--ink);
-  overflow-x: hidden;
+  overflow: hidden;
+  position: relative;
 }
 
 /* Во время боя системный курсор скрыт — только молоток. На оверлее результата — снова обычный. */
 body.in-match {
-  overflow: hidden;
   cursor: none;
 }
 
@@ -47,9 +48,21 @@ body.in-match #overlay:not([hidden]) #to-lobby {
 }
 
 #app {
-  min-height: 100vh;
-  min-height: 100dvh;
+  position: absolute;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 1rem 1.5rem 1.25rem;
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+body.in-match #app {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 1.25rem;
 }
 
 .screen[hidden] {
@@ -65,11 +78,10 @@ body.in-match #overlay:not([hidden]) #to-lobby {
 #lobby {
   max-width: 920px;
   margin: 0 auto;
-  min-height: calc(100vh - 2rem);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .lobby-head {
@@ -316,7 +328,8 @@ body.in-match #cancel-wait:not([hidden]) {
 
 /* —— Match —— */
 #match {
-  min-height: calc(100vh - 2rem);
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 0.75rem;
@@ -337,7 +350,8 @@ body.in-match #cancel-wait:not([hidden]) {
 #timer {
   margin: 0.35rem 0 0;
   color: var(--muted);
-  font-size: 1.05rem;
+  font-size: clamp(1.25rem, 2.2vw, 1.65rem);
+  font-weight: 600;
 }
 
 #timer {
@@ -414,8 +428,9 @@ body.in-match #cancel-wait:not([hidden]) {
 
 .side .name {
   margin: 0;
-  font-size: 0.95rem;
-  color: var(--muted);
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .side .score {
@@ -423,6 +438,12 @@ body.in-match #cancel-wait:not([hidden]) {
   font-size: 2.4rem;
   font-weight: 800;
   line-height: 1;
+}
+
+#board-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
 }
 
 #board {
@@ -435,7 +456,56 @@ body.in-match #cancel-wait:not([hidden]) {
   box-shadow:
     inset 0 0 0 4px #5a4010,
     0 12px 28px #0008;
-  aspect-ratio: 1;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+#go-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: clamp(5rem, 22vw, 9rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #fff8e7;
+  text-shadow:
+    0 0 18px #000a,
+    0 4px 0 #0008,
+    0 10px 28px #0009;
+  opacity: 0;
+}
+
+#go-countdown.is-pop {
+  animation: go-countdown-pop 0.85s ease-out forwards;
+}
+
+@keyframes go-countdown-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.45);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  32% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  62% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
 }
 
 .cell {
@@ -450,6 +520,9 @@ body.in-match #cancel-wait:not([hidden]) {
     0 2px 0 #c4a57455;
   cursor: none;
   overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cell::after {
@@ -555,15 +628,28 @@ body.in-match #cancel-wait:not([hidden]) {
   }
 
   #app {
-    padding: 0.75rem 0.85rem 1rem;
+    padding: 0.75rem 0.85rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.in-match #app {
+    padding-bottom: 0.75rem;
   }
 
   #lobby {
-    min-height: calc(100vh - 1.5rem);
-    min-height: calc(100dvh - 1.5rem);
-    justify-content: flex-start;
     gap: 1rem;
-    padding-bottom: 1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .lobby-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  /* Кнопка «В бой» сразу на экране, рейтинг ниже. */
+  .lobby-card--action {
+    order: -1;
   }
 
   .lobby-head h1 {
@@ -584,9 +670,19 @@ body.in-match #cancel-wait:not([hidden]) {
     font-size: 0.95rem;
   }
 
+  .champions-head,
+  .champions li {
+    grid-template-columns: 1.75rem minmax(0, 1fr) 2.75rem 3.25rem 2.75rem;
+    gap: 0.35rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .champions-head {
+    font-size: 0.7rem;
+  }
+
   #match {
-    min-height: calc(100vh - 1.5rem);
-    min-height: calc(100dvh - 1.5rem);
     gap: 0.5rem;
   }
 
@@ -596,11 +692,11 @@ body.in-match #cancel-wait:not([hidden]) {
 
   #status,
   #timer {
-    font-size: 0.95rem;
+    font-size: 1.15rem;
   }
 
   #timer {
-    font-size: 1.2rem;
+    font-size: 1.35rem;
   }
 
   #arena {
@@ -610,6 +706,22 @@ body.in-match #cancel-wait:not([hidden]) {
     max-width: 420px;
     height: 100%;
     min-height: 0;
+  }
+
+  /* Соперник сверху, я снизу (side-left = «я»). */
+  #side-right {
+    order: 1;
+  }
+
+  #board-stage {
+    order: 2;
+    width: min(100%, 72vmin);
+    max-height: min(100%, 72vmin);
+    margin: 0 auto;
+  }
+
+  #side-left {
+    order: 3;
   }
 
   .side {
@@ -630,7 +742,7 @@ body.in-match #cancel-wait:not([hidden]) {
     flex: 1;
     min-width: 0;
     text-align: left;
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -641,11 +753,12 @@ body.in-match #cancel-wait:not([hidden]) {
   }
 
   #board {
-    width: min(100%, 72vmin);
-    max-height: min(100%, 72vmin);
-    margin: 0 auto;
     gap: 0.5rem;
     padding: 0.7rem;
+  }
+
+  #go-countdown {
+    font-size: clamp(4rem, 28vw, 7rem);
   }
 
   #overlay-title {
@@ -666,6 +779,12 @@ body.in-match #cancel-wait:not([hidden]) {
     grid-template-columns: minmax(100px, 1fr) minmax(200px, 320px) minmax(100px, 1fr);
     grid-template-rows: none;
     max-width: 100%;
+  }
+
+  #side-left,
+  #side-right,
+  #board-stage {
+    order: unset;
   }
 
   .side {
