@@ -88,11 +88,34 @@
       </section>
 
       <div id="overlay" hidden>
-        <p id="overlay-title"></p>
-        <p id="overlay-sub"></p>
-        <div class="overlay-actions">
-          <button type="button" id="again">Ещё раз</button>
-          <button type="button" id="to-lobby" class="btn-ghost">В лобби</button>
+        <div class="overlay-card">
+          <p id="overlay-title"></p>
+          <p id="overlay-sub"></p>
+          <div class="overlay-scoreboard" aria-label="Счёт матча">
+            <div class="overlay-fighter is-me">
+              <div
+                class="overlay-portrait"
+                id="overlay-me-portrait"
+                aria-hidden="true"
+              ></div>
+              <p class="overlay-fighter-name" id="overlay-me-name">Вы</p>
+              <p class="overlay-fighter-score" id="overlay-me-score">0</p>
+            </div>
+            <span class="overlay-vs" aria-hidden="true">—</span>
+            <div class="overlay-fighter">
+              <div
+                class="overlay-portrait"
+                id="overlay-foe-portrait"
+                aria-hidden="true"
+              ></div>
+              <p class="overlay-fighter-name" id="overlay-foe-name">Соперник</p>
+              <p class="overlay-fighter-score" id="overlay-foe-score">0</p>
+            </div>
+          </div>
+          <div class="overlay-actions">
+            <button type="button" id="again">Ещё раз</button>
+            <button type="button" id="to-lobby" class="btn-ghost">В лобби</button>
+          </div>
         </div>
       </div>
     </div>

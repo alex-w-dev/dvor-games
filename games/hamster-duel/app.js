@@ -11,9 +11,16 @@
   const goCountdownEl = document.getElementById("go-countdown");
   const joinBtn = document.getElementById("join");
   let lastGoSec = null;
+  let overlayActionsTimer = null;
   const overlay = document.getElementById("overlay");
   const overlayTitle = document.getElementById("overlay-title");
   const overlaySub = document.getElementById("overlay-sub");
+  const overlayMePortrait = document.getElementById("overlay-me-portrait");
+  const overlayFoePortrait = document.getElementById("overlay-foe-portrait");
+  const overlayMeName = document.getElementById("overlay-me-name");
+  const overlayFoeName = document.getElementById("overlay-foe-name");
+  const overlayMeScore = document.getElementById("overlay-me-score");
+  const overlayFoeScore = document.getElementById("overlay-foe-score");
   const againBtn = document.getElementById("again");
   const toLobbyBtn = document.getElementById("to-lobby");
   const cancelWaitBtn = document.getElementById("cancel-wait");
@@ -514,28 +521,86 @@
     goCountdownEl.classList.add("is-pop");
   }
 
+  function resolveFoeId(state) {
+    const leftId = state.sides && state.sides.left;
+    const rightId = state.sides && state.sides.right;
+    if (meId && leftId === meId) return rightId || null;
+    if (meId && rightId === meId) return leftId || null;
+    if (leftId && leftId !== meId) return leftId;
+    if (rightId && rightId !== meId) return rightId;
+    return null;
+  }
+
+  function playerColor(state, playerId) {
+    const colors = state.colors || {};
+    if (playerId && colors[playerId]) return colors[playerId];
+    if (playerId === meId) return sideColor || "red";
+    return "red";
+  }
+
+  function setOverlayActionsLocked(locked) {
+    againBtn.disabled = locked;
+    toLobbyBtn.disabled = locked;
+    overlay.classList.toggle("actions-locked", locked);
+  }
+
+  function armOverlayActions() {
+    if (overlayActionsTimer) {
+      clearTimeout(overlayActionsTimer);
+      overlayActionsTimer = null;
+    }
+    setOverlayActionsLocked(true);
+    overlayActionsTimer = setTimeout(function () {
+      overlayActionsTimer = null;
+      setOverlayActionsLocked(false);
+    }, 2000);
+  }
+
   function showResult(state) {
     timerEl.hidden = true;
     hideGoCountdown();
     setStatus("Матч окончен");
     const win = state.winnerId;
+    let outcome = "draw";
     if (state.reason === "opponent_left") {
-      overlayTitle.textContent = win === meId ? "Победа" : "Соперник вышел";
-      overlaySub.textContent =
-        win === meId ? "Соперник покинул бой." : "Матч прерван.";
+      if (win === meId) {
+        outcome = "win";
+        overlayTitle.textContent = "Победа";
+        overlaySub.textContent = "Соперник покинул бой.";
+      } else {
+        outcome = "lose";
+        overlayTitle.textContent = "Соперник вышел";
+        overlaySub.textContent = "Матч прерван.";
+      }
     } else if (!win) {
+      outcome = "draw";
       overlayTitle.textContent = "Ничья";
-      overlaySub.textContent = "Очки равны.";
+      overlaySub.textContent = "Очки равны — достойный бой.";
     } else if (win === meId) {
+      outcome = "win";
       overlayTitle.textContent = "Победа!";
       overlaySub.textContent = "Вы набрали больше очков.";
     } else {
+      outcome = "lose";
       overlayTitle.textContent = "Поражение";
       overlaySub.textContent = "Соперник был быстрее.";
     }
+    overlay.dataset.outcome = outcome;
+
+    const foeId = resolveFoeId(state);
+    const myScore = (state.scores && meId && state.scores[meId]) || 0;
+    const foeScore = (state.scores && foeId && state.scores[foeId]) || 0;
+    overlayMeScore.textContent = String(myScore | 0);
+    overlayFoeScore.textContent = String(foeScore | 0);
+    overlayMeName.textContent = meName || "Вы";
+    overlayFoeName.textContent = labelPlayer(foeId, "Соперник");
+    overlayMePortrait.dataset.color = playerColor(state, meId);
+    overlayFoePortrait.dataset.color = playerColor(state, foeId);
+
     hammer.hidden = true;
     cancelWaitBtn.hidden = true;
     overlay.hidden = false;
+    armOverlayActions();
     inMatch = false;
     joinBtn.disabled = false;
     joinBtn.textContent = "В бой";
