@@ -5,7 +5,7 @@
  * Frees a slot (max 3) by deleting the oldest non-published version.
  *
  * Env:
- *   DVOR_API_KEY   required
+ *   DVOR_API_KEY   required (admin key: release → approve → publish)
  *   DVOR_API_URL   default https://dvor-play.ru/main-api
  *   GITHUB_EVENT_BEFORE / GITHUB_SHA  optional (GitHub Actions)
  */

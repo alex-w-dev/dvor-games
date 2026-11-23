@@ -6,7 +6,8 @@
  * Env (repo root .env):
  *   DVOR_API_KEY   required
  *   DVOR_API_URL   default https://dvor-play.ru/main-api
- *   DVOR_SUBMIT    default true
+ *   DVOR_SUBMIT    default true → pending
+ *   DVOR_AUTO_PUBLISH  default true when submit: admin key approve+publish
  *   DVOR_VERSION   else package.json#version (required, digits+dots)
  *   DVOR_SKIP_BUILD  if "true", skip pnpm run build
  *   DVOR_CARD_ONLY   if "true", no build/zip — media/card only
@@ -56,6 +57,8 @@ const apiUrl = (
 ).replace(/\/$/, "");
 const apiKey = process.env.DVOR_API_KEY || "";
 const submit = process.env.DVOR_SUBMIT !== "false";
+const autoPublish =
+  submit && process.env.DVOR_AUTO_PUBLISH !== "false";
 const cardOnly = process.env.DVOR_CARD_ONLY === "true";
 const skipBuild = process.env.DVOR_SKIP_BUILD === "true" || cardOnly;
 
@@ -215,11 +218,12 @@ if (hasCard) {
   fieldNames.push("card");
 }
 
-const url = `${apiUrl}/developer/games/${encodeURIComponent(slug)}/release`;
+const basePath = `/developer/games/${encodeURIComponent(slug)}`;
+const url = `${apiUrl}${basePath}/release`;
 console.log(
   "==> release",
   url,
-  `(submit=${submit}, fields=${fieldNames.join(",")})`,
+  `(submit=${submit}, autoPublish=${autoPublish}, fields=${fieldNames.join(",")})`,
 );
 const res = await fetch(url, {
   method: "POST",
@@ -231,5 +235,37 @@ if (!res.ok) {
   console.error("release failed", res.status, text);
   process.exit(1);
 }
+
+let released = null;
+try {
+  released = text ? JSON.parse(text) : null;
+} catch {
+  released = null;
+}
 console.log("released:", text);
+
+const versionId =
+  released && typeof released === "object" ? released.id : null;
+const status =
+  released && typeof released === "object" ? released.status : null;
+
+if (autoPublish && versionId && status === "pending") {
+  for (const step of ["approve", "publish"]) {
+    const stepUrl = `${apiUrl}${basePath}/versions/${versionId}/${step}`;
+    console.log(`==> ${step}`, stepUrl);
+    const stepRes = await fetch(stepUrl, {
+      method: "POST",
+      headers: { "X-Api-Key": apiKey },
+    });
+    const stepText = await stepRes.text();
+    if (!stepRes.ok) {
+      console.error(`${step} failed`, stepRes.status, stepText);
+      process.exit(1);
+    }
+    console.log(`${step}ed:`, stepText);
+  }
+} else if (autoPublish && status && status !== "pending") {
+  console.log(`==> skip approve/publish (status=${status})`);
+}
+
 console.log("play: https://dvor-play.ru/play/" + slug);
