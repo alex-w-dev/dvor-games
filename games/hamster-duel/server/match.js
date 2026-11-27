@@ -43,11 +43,29 @@ function syncNames(ctx) {
   });
 }
 
+function bothSidesConnected(ctx) {
+  var left = ctx.state.sides && ctx.state.sides.left;
+  var right = ctx.state.sides && ctx.state.sides.right;
+  if (!left || !right) return false;
+  var pl = ctx.players.get(left);
+  var pr = ctx.players.get(right);
+  return !!(pl && pl.connected && pr && pr.connected);
+}
+
 function startCountdown(ctx) {
-  var ids = connectedIds(ctx);
-  if (ids.length < 2) return;
+  if (ctx.state.phase !== "waiting") return;
+  var left = ctx.state.sides && ctx.state.sides.left;
+  var right = ctx.state.sides && ctx.state.sides.right;
+  if (!left || !right) {
+    var ids = connectedIds(ctx);
+    if (ids.length < 2) return;
+    left = ids[0];
+    right = ids[1];
+    ctx.state.sides = { left: left, right: right };
+  } else if (!bothSidesConnected(ctx)) {
+    return;
+  }
   syncNames(ctx);
-  ctx.state.sides = { left: ids[0], right: ids[1] };
   ctx.state.phase = "countdown";
   ctx.state.countdownLeft = COUNTDOWN_SEC;
   ctx.state.timeLeft = MATCH_SEC;
@@ -58,7 +76,38 @@ function startCountdown(ctx) {
   ctx.state.winnerId = null;
   ctx.state.reason = null;
   ctx.state.endArmed = false;
-  ctx.log("countdown start", ids[0], ids[1]);
+  ctx.log("countdown start", left, right);
+}
+
+function sidesFromOptions(options) {
+  var left = null;
+  var right = null;
+  var teams = options && options.teams;
+  if (Array.isArray(teams)) {
+    for (var i = 0; i < teams.length; i++) {
+      var t = teams[i];
+      if (!t || typeof t.id !== "string") continue;
+      var pid =
+        Array.isArray(t.playerIds) && typeof t.playerIds[0] === "string"
+          ? t.playerIds[0]
+          : null;
+      if (!pid) continue;
+      if (t.id === "left") left = pid;
+      else if (t.id === "right") right = pid;
+    }
+    if ((!left || !right) && teams.length >= 2) {
+      var a = teams[0] && teams[0].playerIds && teams[0].playerIds[0];
+      var b = teams[1] && teams[1].playerIds && teams[1].playerIds[0];
+      if (!left && typeof a === "string") left = a;
+      if (!right && typeof b === "string") right = b;
+    }
+  }
+  var players = options && options.players;
+  if ((!left || !right) && Array.isArray(players)) {
+    if (!left && typeof players[0] === "string") left = players[0];
+    if (!right && typeof players[1] === "string") right = players[1];
+  }
+  return { left: left, right: right, fromLobby: !!(left && right) };
 }
 
 var TOP_N = 5;
@@ -233,14 +282,16 @@ function spawnMole(ctx) {
 }
 
 globalThis.hooks = {
-  onCreate: function (ctx) {
+  onCreate: function (ctx, options) {
     lateByCell = emptyLateCells();
+    var sides = sidesFromOptions(options || {});
     ctx.state = {
       phase: "waiting",
       countdownLeft: COUNTDOWN_SEC,
       timeLeft: MATCH_SEC,
       scores: {},
-      sides: { left: null, right: null },
+      sides: { left: sides.left, right: sides.right },
+      fromLobby: sides.fromLobby,
       colors: {},
       names: {},
       cells: emptyCells(),
@@ -250,7 +301,14 @@ globalThis.hooks = {
       reason: null,
       endArmed: false,
     };
-    ctx.log("hamster-duel created");
+    if (sides.left) ctx.state.scores[sides.left] = 0;
+    if (sides.right) ctx.state.scores[sides.right] = 0;
+    ctx.log(
+      "hamster-duel created",
+      sides.fromLobby ? "fromLobby" : "open",
+      sides.left,
+      sides.right,
+    );
   },
 
   onJoin: function (ctx, player) {
@@ -260,8 +318,8 @@ globalThis.hooks = {
     if (!ctx.state.names) ctx.state.names = {};
     ctx.state.names[player.id] = playerLabel(ctx, player.id);
     if (!ctx.state.sides) ctx.state.sides = { left: null, right: null };
-    // Waiting: first player already on the field (left), second → right.
-    if (ctx.state.phase === "waiting") {
+    // Open match room: seat first/second. Lobby-started: sides already frozen.
+    if (ctx.state.phase === "waiting" && !ctx.state.fromLobby) {
       if (!ctx.state.sides.left) {
         ctx.state.sides.left = player.id;
       } else if (
@@ -281,7 +339,7 @@ globalThis.hooks = {
     }
     var n = connectedIds(ctx).length;
     ctx.log("join", player.id, "connected=" + n, "phase=" + ctx.state.phase);
-    if (ctx.state.phase === "waiting" && n >= 2) {
+    if (ctx.state.phase === "waiting") {
       startCountdown(ctx);
     }
   },
@@ -350,7 +408,7 @@ globalThis.hooks = {
     }
 
     if (phase === "waiting") {
-      if (live.length >= 2) startCountdown(ctx);
+      startCountdown(ctx);
       return;
     }
 

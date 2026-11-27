@@ -29,9 +29,42 @@ function normalizeColors(data, payload) {
   return { unlockedColors: unlocked, sideColor: sideColor };
 }
 
+function searchingIds(ctx) {
+  var out = [];
+  var map = ctx.state.searching || {};
+  ctx.players.keys().forEach(function (id) {
+    if (!map[id]) return;
+    var p = ctx.players.get(id);
+    if (p && p.connected) out.push(id);
+  });
+  return out;
+}
+
+function tryStartDuel(ctx) {
+  if (ctx.state.starting) return;
+  var ids = searchingIds(ctx);
+  if (ids.length < 2) return;
+  var a = ids[0];
+  var b = ids[1];
+  ctx.state.starting = true;
+  delete ctx.state.searching[a];
+  delete ctx.state.searching[b];
+  ctx.log("start duel", a, b);
+  ctx.match.start({
+    players: [a, b],
+    teams: [
+      { id: "left", name: "Left", playerIds: [a] },
+      { id: "right", name: "Right", playerIds: [b] },
+    ],
+    data: { mode: "duel" },
+  });
+  ctx.state.starting = false;
+  ctx.broadcast("queue_update", { searching: searchingIds(ctx).length });
+}
+
 globalThis.hooks = {
   onCreate: function (ctx) {
-    ctx.state = {};
+    ctx.state = { searching: {} };
     ctx.log("hamster-duel lobby created");
   },
 
@@ -40,10 +73,24 @@ globalThis.hooks = {
   },
 
   onLeave: function (ctx, player) {
+    if (ctx.state.searching) delete ctx.state.searching[player.id];
     ctx.log("lobby leave", player.id);
   },
 
   onMessage: function (ctx, player, type, payload) {
+    if (type === "queue") {
+      ctx.state.searching[player.id] = true;
+      ctx.send(player.id, "queue_ok", {});
+      ctx.broadcast("queue_update", { searching: searchingIds(ctx).length });
+      tryStartDuel(ctx);
+      return;
+    }
+    if (type === "cancel_queue") {
+      delete ctx.state.searching[player.id];
+      ctx.send(player.id, "queue_cancelled", {});
+      ctx.broadcast("queue_update", { searching: searchingIds(ctx).length });
+      return;
+    }
     if (type !== "set_color") return;
     if (!ctx.player || !ctx.player.getData || !ctx.player.setData) {
       ctx.send(player.id, "color_err", { message: "player cloud unavailable" });
@@ -69,5 +116,9 @@ globalThis.hooks = {
           message: err && err.message ? String(err.message) : String(err),
         });
       });
+  },
+
+  onTick: function (ctx) {
+    tryStartDuel(ctx);
   },
 };

@@ -42,6 +42,7 @@
   let inMatch = false;
   let handlersBound = false;
   let lobbyConnected = false;
+  let searching = false;
   let boardsCache = { topScore: [], topWins: [], topGames: [] };
   let playerSave = {};
   let sideColor = "red";
@@ -66,6 +67,17 @@
   }
 
   async function leaveToLobby() {
+    if (searching) {
+      try {
+        if (sdk && sdk.lobby && sdk.lobby.send) {
+          sdk.lobby.send("cancel_queue");
+        }
+        if (sdk && sdk.lobby && sdk.lobby.cancelQueue) {
+          await sdk.lobby.cancelQueue();
+        }
+      } catch (_) {}
+      searching = false;
+    }
     if (sdk && sdk.match && sdk.match.leave) {
       try {
         await sdk.match.leave();
@@ -84,6 +96,18 @@
     if (lobbyConnected) return;
     await sdk.lobby.join();
     lobbyConnected = true;
+    if (sdk.lobby.onMatchStarting) {
+      sdk.lobby.onMatchStarting(function () {
+        searching = false;
+        bindMatchHandlers();
+        inMatch = true;
+        joinBtn.disabled = true;
+        showMatch();
+        setStatus("Подключение к матчу…");
+        cancelWaitBtn.hidden = true;
+        // auto-join via SDK (default)
+      });
+    }
   }
 
   function lobbySetColor(color, unlocked) {
@@ -128,6 +152,7 @@
     cancelWaitBtn.hidden = true;
     document.body.classList.remove("in-match");
     inMatch = false;
+    searching = false;
     joinBtn.disabled = !meId;
     joinBtn.textContent = "В бой";
     setLobbyStatus("");
@@ -708,37 +733,52 @@
     }
   }
 
-  async function joinMatch() {
-    if (!sdk || inMatch) return;
+  async function queueForDuel() {
+    if (!sdk || inMatch || searching) return;
     joinBtn.disabled = true;
-    setLobbyStatus("Подключение…");
     overlay.hidden = true;
-    lobbyConnected = false;
     try {
-      if (sdk.match.leave) {
+      await ensureLobby();
+      if (sdk.lobby.queue) {
         try {
-          await sdk.match.leave();
+          await sdk.lobby.queue("duel");
         } catch (_) {}
       }
-      bindMatchHandlers();
-      const info = await sdk.match.join();
-      inMatch = true;
-      meId = (await sdk.getPlayer()).id || meId;
-      showMatch();
-      var st = info && info.state;
-      // SDK до фикса мог вернуть roomState прошлого матча (phase=ended).
-      if (st && st.phase && st.phase !== "ended") onState(st);
-      else {
-        setStatus("Ожидание соперника…");
-        cancelWaitBtn.hidden = false;
-      }
-    } catch (e) {
-      inMatch = false;
-      showLobby();
+      sdk.lobby.send("queue");
+      searching = true;
+      joinBtn.textContent = "Отмена";
       joinBtn.disabled = false;
-      setLobbyStatus("Не удалось войти: " + (e && e.message ? e.message : e));
-      ensureLobby().catch(function () {});
+      setLobbyStatus("Ищем соперника…");
+    } catch (e) {
+      searching = false;
+      joinBtn.disabled = !meId;
+      joinBtn.textContent = "В бой";
+      setLobbyStatus(
+        "Не удалось встать в поиск: " + (e && e.message ? e.message : e),
+      );
     }
+  }
+
+  async function cancelQueue() {
+    if (!searching) return;
+    try {
+      if (sdk && sdk.lobby && sdk.lobby.send) sdk.lobby.send("cancel_queue");
+      if (sdk && sdk.lobby && sdk.lobby.cancelQueue) {
+        await sdk.lobby.cancelQueue();
+      }
+    } catch (_) {}
+    searching = false;
+    joinBtn.disabled = !meId;
+    joinBtn.textContent = "В бой";
+    setLobbyStatus("Поиск отменён.");
+  }
+
+  async function onJoinClick() {
+    if (searching) {
+      await cancelQueue();
+      return;
+    }
+    await queueForDuel();
   }
 
   cells.forEach((btn) => {
@@ -755,10 +795,12 @@
     });
   });
 
-  joinBtn.addEventListener("click", joinMatch);
+  joinBtn.addEventListener("click", onJoinClick);
   againBtn.addEventListener("click", () => {
     overlay.hidden = true;
-    joinMatch();
+    leaveToLobby().then(function () {
+      return queueForDuel();
+    });
   });
   toLobbyBtn.addEventListener("click", leaveToLobby);
   cancelWaitBtn.addEventListener("click", leaveToLobby);
